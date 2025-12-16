@@ -193,57 +193,55 @@ create table diagnosis(
 DELIMITER |
 
 CREATE TRIGGER check_patient_disjoint
-AFTER INSERT ON patient
+BEFORE INSERT ON patient
 FOR EACH ROW
 BEGIN
-    IF NEW.person_id IN (SELECT person_id FROM doctor) THEN
-        DELETE FROM patient WHERE patient.person_id = NEW.person_id;
+    IF EXISTS (SELECT 1 FROM doctor WHERE person_id = NEW.person_id)
+       OR EXISTS (SELECT 1 FROM nurse WHERE person_id = NEW.person_id)
+       OR EXISTS (SELECT 1 FROM admin WHERE person_id = NEW.person_id) 
+    THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Have already exists';
     END IF;
 END;|
 
 CREATE TRIGGER check_doctor_disjoint
-AFTER INSERT ON doctor
+BEFORE INSERT ON doctor
 FOR EACH ROW
 BEGIN
-    IF NEW.person_id IN (SELECT person_id FROM patient) THEN
-        DELETE FROM doctor WHERE doctor.person_id = NEW.person_id;
+    IF EXISTS (SELECT 1 FROM patient WHERE person_id = NEW.person_id)
+       OR EXISTS (SELECT 1 FROM nurse WHERE person_id = NEW.person_id)
+       OR EXISTS (SELECT 1 FROM admin WHERE person_id = NEW.person_id) 
+    THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Have already exists';
     END IF;
 END;|
 
 CREATE TRIGGER check_nurse_disjoint
-AFTER INSERT ON nurse
+BEFORE INSERT ON nurse
 FOR EACH ROW
 BEGIN
-    IF NEW.person_id IN (SELECT person_id FROM doctor) THEN
-        DELETE FROM nurse WHERE nurse.person_id = NEW.person_id;
+    IF EXISTS (SELECT 1 FROM patient WHERE person_id = NEW.person_id)
+       OR EXISTS (SELECT 1 FROM doctor WHERE person_id = NEW.person_id)
+       OR EXISTS (SELECT 1 FROM admin WHERE person_id = NEW.person_id) 
+    THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Have already exists';
     END IF;
 END;|
 
-CREATE TRIGGER check_doctor_disjoint_nurse
-AFTER INSERT ON doctor
+CREATE TRIGGER check_admin_disjoint
+BEFORE INSERT ON nurse
 FOR EACH ROW
 BEGIN
-    IF NEW.person_id IN (SELECT person_id FROM nurse) THEN
-        DELETE FROM doctor WHERE doctor.person_id = NEW.person_id;
+    IF EXISTS (SELECT 1 FROM patient WHERE person_id = NEW.person_id)
+       OR EXISTS (SELECT 1 FROM doctor WHERE person_id = NEW.person_id)
+       OR EXISTS (SELECT 1 FROM nurse WHERE person_id = NEW.person_id) 
+    THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Have already exists';
     END IF;
 END;|
-
-CREATE TRIGGER check_admin_disjoint_doctor
-AFTER INSERT ON admin
-FOR EACH ROW
-BEGIN
-    IF NEW.person_id IN (SELECT person_id FROM doctor) THEN
-        DELETE FROM admin WHERE admin.person_id = NEW.person_id;
-    END IF;
-END;|
-
-CREATE TRIGGER check_admin_disjoint_patient
-AFTER INSERT ON admin
-FOR EACH ROW
-BEGIN
-    IF NEW.person_id IN (SELECT person_id FROM patient) THEN
-        DELETE FROM admin WHERE admin.person_id = NEW.person_id;
-    END IF;
-END;|
-
+    
 DELIMITER ;
