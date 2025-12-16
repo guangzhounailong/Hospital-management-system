@@ -74,8 +74,8 @@ try {
             $validity_period = isset($prescription['validity_period']) ? $prescription['validity_period'] : 7;
             
             // Insert prescription
-            $presc_sql = "INSERT INTO prescription (prescription_id, patient_id, doctor_id, p_date, dosage, usage_statement, validity_period) 
-                         VALUES ('$new_prescription_id', '$patient_id', '$doctor_id', '$record_date', '$dosage', '$usage_statement', '$validity_period')";
+            $presc_sql = "INSERT INTO prescription (prescription_id, patient_id, doctor_id, p_date,  validity_period) 
+                         VALUES ('$new_prescription_id', '$patient_id', '$doctor_id', '$record_date',  '$validity_period')";
             
             if(!executeTrackedQuery($conn, $presc_sql)){
                 throw new Exception('Failed to create prescription');
@@ -83,8 +83,8 @@ try {
             
             // Link prescription to medicine
             $medicine_id = $prescription['medicine_id'];
-            $link_sql = "INSERT INTO prescription_medicine (prescription_id, medicine_id) 
-                        VALUES ('$new_prescription_id', '$medicine_id')";
+            $link_sql = "INSERT INTO prescription_medicine (prescription_id, medicine_id, dosage, usage_statement) 
+                        VALUES ('$new_prescription_id', '$medicine_id','$dosage', '$usage_statement')";
             
             if(!executeTrackedQuery($conn, $link_sql)){
                 throw new Exception('Failed to link prescription to medicine');

@@ -95,8 +95,7 @@ create table prescription(
     patient_id INT NOT NULL,
     doctor_id INT NOT NULL,
     p_date DATE NOT NULL,
-    dosage VARCHAR(100) NOT NULL,
-    usage_statement TEXT,
+    
     validity_period INT,
     PRIMARY KEY (prescription_id),
     FOREIGN KEY (patient_id) REFERENCES patient(patient_id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -147,14 +146,6 @@ create table medical_record(
 
 /*Relationship tables for Hospital Management System*/
 
-create table nurse_department(
-    nurse_id INT,
-    department_id INT,
-    PRIMARY KEY (nurse_id, department_id),
-    FOREIGN KEY (nurse_id) REFERENCES nurse(nurse_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (department_id) REFERENCES department(department_id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
 create table patient_ward(
     patient_id INT,
     ward_id INT,
@@ -174,18 +165,14 @@ create table patient_disease(
 create table prescription_medicine(
     prescription_id INT,
     medicine_id INT,
+    dosage VARCHAR(100) NOT NULL,
+    usage_statement TEXT,
     PRIMARY KEY (prescription_id, medicine_id),
     FOREIGN KEY (prescription_id) REFERENCES prescription(prescription_id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (medicine_id) REFERENCES medicine(medicine_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-create table appointment_doctor(
-    appointment_id INT,
-    doctor_id INT,
-    PRIMARY KEY (appointment_id, doctor_id),
-    FOREIGN KEY (appointment_id) REFERENCES appointment(appointment_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (doctor_id) REFERENCES doctor(doctor_id) ON DELETE CASCADE ON UPDATE CASCADE
-);
+
 
 create table execution(
     prescription_id INT,
@@ -202,3 +189,61 @@ create table diagnosis(
     FOREIGN KEY (doctor_id) REFERENCES doctor(doctor_id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+DELIMITER |
+
+CREATE TRIGGER check_patient_disjoint
+AFTER INSERT ON patient
+FOR EACH ROW
+BEGIN
+    IF NEW.person_id IN (SELECT person_id FROM doctor) THEN
+        DELETE FROM patient WHERE patient.person_id = NEW.person_id;
+    END IF;
+END;|
+
+CREATE TRIGGER check_doctor_disjoint
+AFTER INSERT ON doctor
+FOR EACH ROW
+BEGIN
+    IF NEW.person_id IN (SELECT person_id FROM patient) THEN
+        DELETE FROM doctor WHERE doctor.person_id = NEW.person_id;
+    END IF;
+END;|
+
+CREATE TRIGGER check_nurse_disjoint
+AFTER INSERT ON nurse
+FOR EACH ROW
+BEGIN
+    IF NEW.person_id IN (SELECT person_id FROM doctor) THEN
+        DELETE FROM nurse WHERE nurse.person_id = NEW.person_id;
+    END IF;
+END;|
+
+CREATE TRIGGER check_doctor_disjoint_nurse
+AFTER INSERT ON doctor
+FOR EACH ROW
+BEGIN
+    IF NEW.person_id IN (SELECT person_id FROM nurse) THEN
+        DELETE FROM doctor WHERE doctor.person_id = NEW.person_id;
+    END IF;
+END;|
+
+CREATE TRIGGER check_admin_disjoint_doctor
+AFTER INSERT ON admin
+FOR EACH ROW
+BEGIN
+    IF NEW.person_id IN (SELECT person_id FROM doctor) THEN
+        DELETE FROM admin WHERE admin.person_id = NEW.person_id;
+    END IF;
+END;|
+
+CREATE TRIGGER check_admin_disjoint_patient
+AFTER INSERT ON admin
+FOR EACH ROW
+BEGIN
+    IF NEW.person_id IN (SELECT person_id FROM patient) THEN
+        DELETE FROM admin WHERE admin.person_id = NEW.person_id;
+    END IF;
+END;|
+
+DELIMITER ;

@@ -93,8 +93,8 @@ if($records_result){
         // Get prescriptions for this medical record
         $prescription_sql = "SELECT 
                                 pr.prescription_id,
-                                pr.dosage,
-                                pr.usage_statement,
+                                pm.dosage,
+                                pm.usage_statement,
                                 pr.validity_period,
                                 m.medicine_name
                             FROM prescription AS pr
