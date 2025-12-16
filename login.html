@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Hospital Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="bg-slate-50">
+    <!-- Login Screen -->
+    <div class="fixed inset-0 bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-sky-500 to-blue-600 px-8 py-6 text-center text-white">
+          <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <div class="w-16 h-16 rounded-full bg-white flex items-center justify-center text-sky-600 text-2xl font-bold">
+              H
+            </div>
+          </div>
+          <h1 class="text-2xl font-bold mb-2">Huakang Hospital</h1>
+          <p class="text-sky-100">Hospital Management System</p>
+        </div>
+
+        <!-- Login Form -->
+        <div class="px-8 py-8">
+          <h2 class="text-xl font-semibold text-slate-800 mb-6 text-center">Welcome Back</h2>
+          <p class="text-slate-600 text-center mb-8">Sign in to your account</p>
+
+          <!-- Error Message -->
+          <div id="errorMessage" style="display:none;" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">
+            <span id="errorText"></span>
+          </div>
+
+          <form action="login.php" method="POST" class="space-y-6">
+            <div>
+              <label for="username" class="block text-sm font-medium text-slate-700 mb-2">Username (Phone)</label>
+              <input
+                id="username"
+                type="text"
+                name="username"
+                class="input"
+                placeholder="Enter your phone number"
+                required
+                autofocus
+              />
+            </div>
+
+            <div>
+              <label for="password" class="block text-sm font-medium text-slate-700 mb-2">Password</label>
+              <input
+                id="password"
+                type="password"
+                name="password"
+                class="input"
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-3 px-6 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              Sign In
+            </button>
+          </form>
+
+          <a href="register.html">
+            <button
+              type="button"
+              class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-3 px-6 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 mt-4"
+            >
+              Register
+            </button>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 检查URL参数中的错误信息
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
+      
+      if (error) {
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        
+        if (error === 'invalid') {
+          errorText.textContent = '用户名或密码错误，请重试。';
+        } else if (error === 'no_role') {
+          errorText.textContent = '该用户未分配角色，请联系管理员。';
+        } else {
+          errorText.textContent = '登录失败，请重试。';
+        }
+        
+        errorMessage.style.display = 'block';
+      }
+    </script>
+  </body>
+</html>

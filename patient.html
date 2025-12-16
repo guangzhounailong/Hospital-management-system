@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patient Portal - Hospital Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="bg-slate-50" x-data="patientStore()" x-init="init()">
+    <div class="min-h-screen flex flex-col">
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b border-slate-100 px-4 lg:px-8 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button
+            class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-600"
+            @click="sidebarOpen = !sidebarOpen"
+          >
+            ☰
+          </button>
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center font-semibold">
+              HM
+            </div>
+            <div>
+              <p class="text-lg font-semibold text-slate-800">Huakang Hospital</p>
+              <p class="text-xs text-slate-500">Hospital Management Suite</p>
+            </div>
+          </div>
+        </div>
+        <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <template x-for="item in menuItems" :key="item.key">
+            <a
+              class="py-1 border-b-2 transition"
+              :href="item.href || '#'"
+              :class="currentPage === item.key ? 'text-sky-600 border-sky-500' : 'border-transparent hover:text-sky-600'"
+              @click="item.href ? null : setCurrentPage(item.key)"
+              x-text="item.label"
+            ></a>
+          </template>
+        </nav>
+        <div class="flex items-center gap-3 text-sm">
+          <div class="text-right">
+            <p class="text-slate-800 font-semibold" x-text="user.displayName"></p>
+            <p class="text-slate-500" x-text="user.roleDisplay"></p>
+          </div>
+          <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full object-cover border border-slate-200" />
+          <button @click="logout" class="text-slate-400 hover:text-slate-600 text-lg">↪</button>
+        </div>
+      </header>
+
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside
+          class="bg-white border-r border-slate-100 w-72 transform transition-all duration-200 ease-in-out z-20"
+          :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+        >
+          <div class="p-4 border-b border-slate-100">
+            <p class="text-xs uppercase text-slate-400 mb-2">Quick Links</p>
+            <div class="space-y-1">
+              <template x-for="item in menuItems" :key="item.key">
+                <a
+                  class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between"
+                  :href="item.href || '#'"
+                  :class="currentPage === item.key ? 'bg-sky-50 text-sky-600' : 'text-slate-600 hover:bg-slate-50'"
+                  @click="item.href ? null : setCurrentPage(item.key)"
+                >
+                  <span x-text="item.label"></span>
+                  <span class="text-[10px] uppercase tracking-wide" x-text="item.badge"></span>
+                </a>
+              </template>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="bg-purple-50 border border-purple-100 rounded-2xl p-4">
+              <p class="text-sm font-semibold text-slate-800 mb-2">My Health</p>
+              <ul class="text-xs text-slate-600 space-y-1">
+                <li>Upcoming: <span x-text="upcomingAppointments"></span></li>
+                <li>Records: <span x-text="myMedicalRecords.length"></span></li>
+                <li>Last Visit: 2 weeks ago</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto scrollbar bg-slate-50">
+          <!-- Patient Dashboard -->
+          <div x-show="currentPage === 'dashboard'" class="p-4 lg:p-8 space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center">
+                    <span class="text-2xl">📅</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="upcomingAppointments"></p>
+                    <p class="text-sm text-slate-500">Upcoming Appointments</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <span class="text-2xl">🏥</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="myMedicalRecords.length"></p>
+                    <p class="text-sm text-slate-500">Medical Records</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span class="text-2xl">💊</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="totalPrescriptions"></p>
+                    <p class="text-sm text-slate-500">Active Prescriptions</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span class="text-2xl">❤️</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="user.blood_type"></p>
+                    <p class="text-sm text-slate-500">Blood Type</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <!-- Recent Appointments -->
+              <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Recent Appointments</h3>
+                <div class="space-y-3">
+                  <template x-for="appointment in recentAppointments" :key="appointment.appointment_id">
+                    <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50">
+                      <div class="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center text-sm">📅</div>
+                      <div class="flex-1">
+                        <p class="font-medium text-slate-800" x-text="appointment.doctorName"></p>
+                        <p class="text-sm text-slate-500" x-text="appointment.appointment_date + ' ' + appointment.time"></p>
+                      </div>
+                      <span class="px-2 py-1 rounded-full text-xs font-medium"
+                            :class="appointment.status === 'Scheduled' ? 'bg-emerald-100 text-emerald-700' :
+                                    appointment.status === 'Completed' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-red-100 text-red-700'"
+                            x-text="appointment.status"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Health Summary -->
+              <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Health Summary</h3>
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-600">Height</span>
+                    <span class="font-medium text-slate-800" x-text="user.height_cm + ' cm'"></span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-600">Weight</span>
+                    <span class="font-medium text-slate-800" x-text="user.weight_kg + ' kg'"></span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-600">BMI</span>
+                    <span class="font-medium text-slate-800" x-text="calculateBMI()"></span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-600">Blood Type</span>
+                    <span class="font-medium text-slate-800" x-text="user.blood_type"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Book Appointment -->
+          <div x-show="currentPage === 'book-appointment'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div>
+                <p class="text-xs uppercase text-slate-400">Appointments</p>
+                <h1 class="text-2xl font-semibold text-slate-800">Book Appointment</h1>
+                <p class="text-sm text-slate-500">Schedule a visit with your preferred doctor</p>
+              </div>
+
+              <form class="grid md:grid-cols-2 gap-6">
+                <!-- TODO: GET /api/departments 获取科室列表 -->
+                <label class="flex flex-col gap-2">
+                  <span class="font-medium text-slate-700">Department</span>
+                  <select class="input" x-model="appointmentForm.departmentId" @change="loadDoctors">
+                    <option value="">Select Department</option>
+                    <template x-for="dept in departments" :key="dept.department_id">
+                      <option :value="dept.department_id" x-text="dept.name"></option>
+                    </template>
+                  </select>
+                </label>
+
+                <!-- TODO: GET /api/doctors?department_id={id} 获取科室医生列表 -->
+                <label class="flex flex-col gap-2">
+                  <span class="font-medium text-slate-700">Doctor</span>
+                  <select class="input" x-model="appointmentForm.doctorId" @change="loadAvailableSlots">
+                    <option value="">Select Doctor</option>
+                    <template x-for="doctor in availableDoctors" :key="doctor.doctor_id">
+                      <option :value="doctor.doctor_id" x-text="doctor.name + ' (' + doctor.specialty + ')'"></option>
+                    </template>
+                  </select>
+                </label>
+
+                <label class="flex flex-col gap-2">
+                  <span class="font-medium text-slate-700">Appointment Date</span>
+                  <input type="date" class="input" x-model="appointmentForm.date" @change="loadAvailableSlots" :min="getTodayDate()" required />
+                </label>
+
+                <!-- TODO: GET /api/appointments/available-slots?doctor_id={id}&date={date} 获取医生可用时段 -->
+                <label class="flex flex-col gap-2">
+                  <span class="font-medium text-slate-700">Available Time</span>
+                  <select class="input" x-model="appointmentForm.timeSlot">
+                    <option value="">Select Time</option>
+                    <template x-for="slot in availableSlots" :key="slot">
+                      <option :value="slot" x-text="slot"></option>
+                    </template>
+                  </select>
+                </label>
+
+                <label class="flex flex-col gap-2 md:col-span-2">
+                  <span class="font-medium text-slate-700">Symptoms</span>
+                  <textarea class="input" rows="3" x-model="appointmentForm.symptom" placeholder="Describe your symptoms or reason for visit..."></textarea>
+                </label>
+              </form>
+
+              <div class="flex items-center justify-end gap-3">
+                <button @click="resetAppointmentForm" class="px-6 py-3 border border-slate-200 text-slate-600 rounded-full hover:bg-slate-50">
+                  Reset
+                </button>
+                <button @click="bookAppointment" class="px-6 py-3 bg-sky-600 text-white rounded-full hover:bg-sky-700">
+                  Book Appointment
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <!-- My Appointments -->
+          <div x-show="currentPage === 'my-appointments'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Appointments</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">My Appointments</h1>
+                  <p class="text-sm text-slate-500">View and manage your scheduled appointments</p>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <template x-for="appointment in myAppointments" :key="appointment.appointment_id">
+                  <div class="border border-slate-100 rounded-2xl p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                      <div class="flex items-center gap-4">
+                        <img :src="appointment.doctorAvatar" class="w-12 h-12 rounded-full" />
+                        <div>
+                          <p class="font-semibold text-slate-800" x-text="appointment.doctorName"></p>
+                          <p class="text-sm text-slate-500" x-text="appointment.department"></p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <p class="font-medium text-slate-800" x-text="appointment.appointment_date + ' ' + appointment.time"></p>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium"
+                              :class="appointment.status === 'Scheduled' ? 'bg-emerald-100 text-emerald-700' :
+                                      appointment.status === 'Completed' ? 'bg-blue-100 text-blue-700' :
+                                      'bg-red-100 text-red-700'"
+                              x-text="appointment.status"></span>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <div class="text-sm text-slate-600">
+                        <p>Symptoms: <span x-text="appointment.symptoms"></span></p>
+                      </div>
+                      <div class="flex gap-3" x-show="appointment.status === 'Scheduled'">
+                        <button @click="modifyAppointment(appointment)" class="px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium hover:bg-amber-200">
+                          Modify
+                        </button>
+                        <button @click="cancelAppointment(appointment.appointment_id)" class="px-4 py-2 bg-rose-100 text-rose-700 rounded-full text-sm font-medium hover:bg-rose-200">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div x-show="myAppointments.length === 0" class="text-center py-12">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                  <span class="text-2xl">📅</span>
+                </div>
+                <p class="text-slate-600">No appointments scheduled</p>
+                <button @click="setCurrentPage('book-appointment')" class="mt-4 px-6 py-3 bg-sky-600 text-white rounded-full hover:bg-sky-700">
+                  Book Your First Appointment
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <!-- My Medical Records & Prescriptions -->
+          <div x-show="currentPage === 'my-records'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div>
+                <p class="text-xs uppercase text-slate-400">Medical Records</p>
+                <h1 class="text-2xl font-semibold text-slate-800">My Medical Records & Prescriptions</h1>
+                <p class="text-sm text-slate-500">View your complete medical history</p>
+              </div>
+
+              <div class="space-y-6">
+                <template x-for="record in myMedicalRecords" :key="record.record_id">
+                  <div class="border border-slate-100 rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                      <div class="flex items-center gap-4">
+                        <img :src="record.doctorAvatar" class="w-12 h-12 rounded-full" />
+                        <div>
+                          <p class="font-semibold text-slate-800" x-text="record.doctorName"></p>
+                          <p class="text-sm text-slate-500" x-text="record.record_date + ' • ' + record.department"></p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                      <div>
+                        <h4 class="font-medium text-slate-800 mb-2">Diagnosis</h4>
+                        <p class="text-slate-600" x-text="record.diagnosis"></p>
+                      </div>
+                      <div>
+                        <h4 class="font-medium text-slate-800 mb-2">Treatment Plan</h4>
+                        <p class="text-slate-600" x-text="record.treatment_plan"></p>
+                      </div>
+                    </div>
+
+                    <div x-show="record.vital_signs" class="mb-6">
+                      <h4 class="font-medium text-slate-800 mb-2">Vital Signs</h4>
+                      <p class="text-slate-600" x-text="record.vital_signs"></p>
+                    </div>
+
+                    <div x-show="record.prescriptions && record.prescriptions.length > 0">
+                      <h4 class="font-medium text-slate-800 mb-3">Prescriptions</h4>
+                      <div class="space-y-3">
+                        <template x-for="prescription in record.prescriptions" :key="prescription.prescription_id">
+                          <div class="bg-slate-50 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                              <span class="font-medium text-slate-800" x-text="prescription.medicineName"></span>
+                              <span class="text-sm text-slate-500" x-text="prescription.validity_period + ' days'"></span>
+                            </div>
+                            <div class="text-sm text-slate-600">
+                              <p>Dosage: <span x-text="prescription.dosage"></span></p>
+                              <p>Instructions: <span x-text="prescription.usage_statement"></span></p>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div x-show="myMedicalRecords.length === 0" class="text-center py-12">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                  <span class="text-2xl">📋</span>
+                </div>
+                <p class="text-slate-600">No medical records found</p>
+              </div>
+            </section>
+          </div>
+
+          <!-- Profile -->
+          <div x-show="currentPage === 'profile'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div>
+                <p class="text-xs uppercase text-slate-400">Profile</p>
+                <h1 class="text-2xl font-semibold text-slate-800">Patient Profile</h1>
+                <p class="text-sm text-slate-500">View your complete health information</p>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-8">
+                <!-- Personal Information -->
+                <div class="space-y-6">
+                  <h3 class="text-lg font-semibold text-slate-800">Personal Information</h3>
+                  <div class="space-y-4">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Patient ID</span>
+                      <span class="font-medium text-slate-800" x-text="user.patient_id"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Full Name</span>
+                      <span class="font-medium text-slate-800" x-text="user.name"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Gender</span>
+                      <span class="font-medium text-slate-800" x-text="user.gender"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Age</span>
+                      <span class="font-medium text-slate-800" x-text="user.age + ' years'"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Phone</span>
+                      <span class="font-medium text-slate-800" x-text="user.phone"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Health Information -->
+                <div class="space-y-6">
+                  <h3 class="text-lg font-semibold text-slate-800">Health Information</h3>
+                  <div class="space-y-4">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Height</span>
+                      <span class="font-medium text-slate-800" x-text="user.height_cm + ' cm'"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Weight</span>
+                      <span class="font-medium text-slate-800" x-text="user.weight_kg + ' kg'"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Blood Type</span>
+                      <span class="font-medium text-slate-800" x-text="user.blood_type"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">BMI</span>
+                      <span class="font-medium text-slate-800" x-text="calculateBMI()"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                      <span class="text-slate-600">Address</span>
+                      <span class="font-medium text-slate-800 text-right" x-text="user.address"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Modify Appointment Modal -->
+    <div
+      x-show="modifyModal.visible"
+      x-transition
+      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-3xl shadow-xl w-full max-w-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <div>
+            <p class="text-lg font-semibold text-slate-800">Modify Appointment</p>
+            <p class="text-xs text-slate-500">Update your appointment details</p>
+          </div>
+          <button class="text-slate-400 hover:text-slate-600" @click="closeModifyModal">✕</button>
+        </div>
+        
+        <div class="p-6 space-y-6">
+          <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <p class="text-sm font-medium text-slate-800">Current Appointment</p>
+            <p class="text-xs text-slate-600 mt-1">
+              Doctor: <span class="font-medium" x-text="modifyModal.current.doctorName"></span> • 
+              Date: <span class="font-medium" x-text="modifyModal.current.appointment_date"></span> • 
+              Time: <span class="font-medium" x-text="modifyModal.current.time"></span>
+            </p>
+          </div>
+
+          <form class="grid md:grid-cols-2 gap-6">
+            <label class="flex flex-col gap-2">
+              <span class="font-medium text-slate-700">New Date</span>
+              <input 
+                type="date" 
+                class="input" 
+                x-model="modifyModal.form.date"
+                :min="getTodayDate()"
+                @change="loadModifyAvailableSlots"
+                required 
+              />
+            </label>
+
+            <label class="flex flex-col gap-2">
+              <span class="font-medium text-slate-700">New Time</span>
+              <select class="input" x-model="modifyModal.form.time" required>
+                <option value="">Select Time</option>
+                <template x-for="slot in modifyModal.availableSlots" :key="slot">
+                  <option :value="slot" x-text="slot"></option>
+                </template>
+              </select>
+            </label>
+
+            <label class="flex flex-col gap-2 md:col-span-2">
+              <span class="font-medium text-slate-700">Symptoms (Optional)</span>
+              <textarea class="input" rows="3" x-model="modifyModal.form.symptoms" placeholder="Update your symptoms..."></textarea>
+            </label>
+          </form>
+        </div>
+
+        <div class="border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3">
+          <button class="px-6 py-3 border border-slate-200 text-slate-600 rounded-full hover:bg-slate-50" @click="closeModifyModal">
+            Cancel
+          </button>
+          <button 
+            class="px-6 py-3 bg-amber-600 text-white rounded-full hover:bg-amber-700"
+            @click="submitModifyAppointment"
+            :disabled="loading"
+          >
+            <span x-show="!loading">Save Changes</span>
+            <span x-show="loading">Saving...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Running Time Monitor - Fixed Bottom Right -->
+    <div x-data="runningTimeMonitor()" x-init="init()" class="fixed bottom-4 right-4 z-50">
+      <!-- Toggle Button -->
+      <button 
+        @click="expanded = !expanded" 
+        class="bg-gradient-to-br from-sky-500 to-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium"
+        :class="expanded ? 'rounded-b-none' : ''"
+      >
+        <span>💾</span>
+        <span x-show="!expanded">SQL Monitor</span>
+        <span x-show="expanded">Hide</span>
+      </button>
+      
+      <!-- Monitor Panel -->
+      <div 
+        x-show="expanded" 
+        x-transition
+        class="bg-white rounded-t-2xl shadow-2xl border border-slate-200 w-80 max-h-96 overflow-hidden flex flex-col"
+      >
+        <div class="bg-gradient-to-br from-sky-500 to-blue-600 text-white px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">💾</span>
+            <span class="font-semibold">SQL Queries</span>
+          </div>
+          <button @click="clearHistory()" class="text-white/80 hover:text-white text-xs">Clear</button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50">
+          <template x-for="(entry, index) in history" :key="index">
+            <div class="bg-white rounded-lg p-3 border border-slate-100 text-xs">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600" x-text="entry.method"></span>
+                  <span class="font-medium text-slate-700 truncate" x-text="'@' + entry.api"></span>
+                </div>
+                <span 
+                  class="font-bold px-2 py-0.5 rounded-full text-xs whitespace-nowrap ml-2"
+                  :class="entry.time < 1 ? 'bg-emerald-100 text-emerald-700' : 
+                          entry.time < 5 ? 'bg-blue-100 text-blue-700' : 
+                          entry.time < 10 ? 'bg-amber-100 text-amber-700' : 
+                          'bg-rose-100 text-rose-700'"
+                  x-text="entry.time + 'ms'"
+                ></span>
+              </div>
+              <div class="flex items-center justify-end text-slate-400 text-[10px]">
+                <span x-text="entry.timestamp"></span>
+              </div>
+            </div>
+          </template>
+          
+          <div x-show="history.length === 0" class="text-center py-8 text-slate-400">
+            <p class="text-2xl mb-2">💾</p>
+            <p class="text-sm">No SQL queries yet</p>
+            <p class="text-xs mt-1">Book or modify appointments</p>
+          </div>
+        </div>
+        
+        <div class="bg-slate-50 px-4 py-3 border-t border-slate-200">
+          <div class="text-xs text-slate-600">
+            <div class="flex justify-between mb-1">
+              <span>Average:</span>
+              <span class="font-semibold" x-text="avgTime + 'ms'"></span>
+            </div>
+            <div class="flex justify-between">
+              <span>Total Requests:</span>
+              <span class="font-semibold" x-text="history.length"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Running Time Monitor Component
+      function runningTimeMonitor() {
+        return {
+          expanded: false,
+          history: [],
+          maxHistory: 10,
+          
+          init() {
+            this.interceptFetch();
+          },
+          
+          interceptFetch() {
+            const originalFetch = window.fetch;
+            const self = this;
+            
+            window.fetch = async function(...args) {
+              const startTime = performance.now();
+              const url = args[0];
+              const options = args[1] || {};
+              const method = options.method || 'GET';
+              
+              try {
+                const response = await originalFetch.apply(this, args);
+                const clonedResponse = response.clone();
+                
+                // Try to extract sql_queries from response
+                try {
+                  const data = await clonedResponse.json();
+                  
+                  // If response contains SQL queries, display them
+                  if (data.sql_queries && Array.isArray(data.sql_queries)) {
+                    data.sql_queries.forEach(query => {
+                      self.addEntry(
+                        query.location,           // e.g., "book_appointment.php:38"
+                        query.type,               // e.g., "SELECT", "INSERT"
+                        query.time                // execution time in ms
+                      );
+                    });
+                  }
+                } catch (e) {
+                  // Response is not JSON, skip
+                }
+                
+                return response;
+              } catch (error) {
+                throw error;
+              }
+            };
+          },
+          
+          addEntry(api, method, time) {
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              second: '2-digit' 
+            });
+            
+            this.history.unshift({
+              api: api,
+              method: method,
+              time: Math.round(time * 100) / 100,
+              timestamp: timestamp
+            });
+            
+            // Keep only last N entries
+            if (this.history.length > this.maxHistory) {
+              this.history = this.history.slice(0, this.maxHistory);
+            }
+          },
+          
+          clearHistory() {
+            this.history = [];
+          },
+          
+          get avgTime() {
+            if (this.history.length === 0) return 0;
+            const sum = this.history.reduce((acc, entry) => acc + entry.time, 0);
+            return Math.round((sum / this.history.length) * 100) / 100;
+          }
+        };
+      }
+
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("patientStore", patientStore);
+        Alpine.data("runningTimeMonitor", runningTimeMonitor);
+      });
+
+      function patientStore() {
+        return {
+          // User State - Patient complete information from database
+          user: {
+            patient_id: '',
+            person_id: '',
+            name: 'Loading...',
+            gender: '',
+            age: 0,
+            phone: '',
+            height_cm: 0,
+            weight_kg: 0,
+            blood_type: 'N/A',
+            address: 'N/A',
+            displayName: 'Loading...',
+            roleDisplay: 'Patient',
+            avatar: 'https://i.pravatar.cc/48?img=13'
+          },
+
+          // UI State
+          sidebarOpen: false,
+          currentPage: 'dashboard',
+          loading: false,
+
+          // Menu Items
+          menuItems: [
+            { key: "dashboard", label: "Dashboard", badge: "Overview" },
+            { key: "book-appointment", label: "Book Appointment", badge: "Schedule" },
+            { key: "my-appointments", label: "My Appointments", badge: "History" },
+            { key: "my-records", label: "My Medical Records", badge: "Health" },
+            { key: "profile", label: "Personal Center", badge: "Account" },
+          ],
+
+          // Data from database
+          departments: [],
+          myAppointments: [],
+          myMedicalRecords: [],
+
+          // Form Data
+          appointmentForm: {
+            departmentId: '',
+            doctorId: '',
+            date: '',
+            timeSlot: '',
+            symptom: ''
+          },
+
+          availableDoctors: [],
+          availableSlots: [],
+
+          // Modify Modal State
+          modifyModal: {
+            visible: false,
+            current: {},
+            form: {
+              date: '',
+              time: '',
+              symptoms: ''
+            },
+            availableSlots: []
+          },
+
+          // Initialize - Load all data
+          async init() {
+            await this.loadPatientData();
+            await this.loadDepartments();
+            await this.loadAppointments();
+            await this.loadMedicalRecords();
+          },
+
+          // Load patient data
+          async loadPatientData() {
+            try {
+              const response = await fetch('patient_data.php');
+              const result = await response.json();
+              
+              if (result.success) {
+                this.user = result.data;
+              } else {
+                console.error('Failed to load patient data:', result.message);
+                if (result.message === 'Unauthorized access') {
+                  window.location.href = 'login.html';
+                }
+              }
+            } catch (error) {
+              console.error('Error loading patient data:', error);
+            }
+          },
+
+          // Load departments
+          async loadDepartments() {
+            try {
+              const response = await fetch('get_departments.php');
+              const result = await response.json();
+              
+              if (result.success) {
+                this.departments = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading departments:', error);
+            }
+          },
+
+          // Load appointments
+          async loadAppointments() {
+            try {
+              const response = await fetch('get_appointments.php');
+              const result = await response.json();
+              
+              if (result.success) {
+                this.myAppointments = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading appointments:', error);
+            }
+          },
+
+          // Load medical records
+          async loadMedicalRecords() {
+            try {
+              const response = await fetch('get_medical_records.php');
+              const result = await response.json();
+              
+              if (result.success) {
+                this.myMedicalRecords = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading medical records:', error);
+            }
+          },
+
+          // Computed Properties
+          upcomingAppointments() {
+            return this.myAppointments.filter(apt => apt.status === 'Scheduled').length;
+          },
+
+          totalPrescriptions() {
+            return this.myMedicalRecords.reduce((total, record) => total + (record.prescriptions ? record.prescriptions.length : 0), 0);
+          },
+
+          recentAppointments() {
+            return this.myAppointments.slice(0, 3);
+          },
+
+          calculateBMI() {
+            const height = this.user.height_cm / 100; // convert to meters
+            const weight = this.user.weight_kg;
+            if (height > 0 && weight > 0) {
+              const bmi = (weight / (height * height)).toFixed(1);
+              return bmi;
+            }
+            return 'N/A';
+          },
+
+          // Methods
+          setCurrentPage(page) {
+            this.currentPage = page;
+            this.sidebarOpen = false;
+          },
+
+          async logout() {
+            // Call logout PHP script to destroy session
+            try {
+              await fetch('logout.php');
+            } catch (error) {
+              console.error('Error logging out:', error);
+            }
+            window.location.href = 'login.html';
+          },
+
+          // Patient Methods
+          async loadDoctors() {
+            if (!this.appointmentForm.departmentId) return;
+            
+            try {
+              const response = await fetch(`get_doctors.php?department_id=${this.appointmentForm.departmentId}`);
+              const result = await response.json();
+              
+              if (result.success) {
+                this.availableDoctors = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading doctors:', error);
+            }
+            
+            this.appointmentForm.doctorId = '';
+            this.availableSlots = [];
+          },
+
+          async loadAvailableSlots() {
+            if (!this.appointmentForm.doctorId || !this.appointmentForm.date) return;
+            
+            try {
+              const response = await fetch(`get_available_slots.php?doctor_id=${this.appointmentForm.doctorId}&date=${this.appointmentForm.date}`);
+              const result = await response.json();
+              
+              if (result.success) {
+                this.availableSlots = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading available slots:', error);
+            }
+          },
+
+          async bookAppointment() {
+            if (!this.appointmentForm.doctorId || !this.appointmentForm.date || !this.appointmentForm.timeSlot) {
+              alert('Please fill in all required fields');
+              return;
+            }
+            
+            // Check if date is in the future
+            const selectedDate = new Date(this.appointmentForm.date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+              alert('Cannot book appointments for past dates. Please select a future date.');
+              return;
+            }
+            
+            this.loading = true;
+            
+            try {
+              const response = await fetch('book_appointment.php', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  doctor_id: this.appointmentForm.doctorId,
+                  appointment_date: this.appointmentForm.date,
+                  time: this.appointmentForm.timeSlot,
+                  symptoms: this.appointmentForm.symptom
+                })
+              });
+              
+              const result = await response.json();
+              
+              if (result.success) {
+                alert('Appointment booked successfully!');
+                this.resetAppointmentForm();
+                await this.loadAppointments();
+                this.setCurrentPage('my-appointments');
+              } else {
+                alert('Failed to book appointment: ' + result.message);
+              }
+            } catch (error) {
+              console.error('Error booking appointment:', error);
+              alert('Error booking appointment. Please try again.');
+            }
+            
+            this.loading = false;
+          },
+
+          resetAppointmentForm() {
+            this.appointmentForm = {
+              departmentId: '',
+              doctorId: '',
+              date: '',
+              timeSlot: '',
+              symptom: ''
+            };
+            this.availableDoctors = [];
+            this.availableSlots = [];
+          },
+
+          modifyAppointment(appointment) {
+            this.modifyModal.current = appointment;
+            this.modifyModal.form = {
+              date: appointment.appointment_date,
+              time: appointment.time,
+              symptoms: appointment.symptoms
+            };
+            this.modifyModal.visible = true;
+            // Load available slots for the current date
+            this.loadModifyAvailableSlots();
+          },
+
+          closeModifyModal() {
+            this.modifyModal.visible = false;
+            this.modifyModal.current = {};
+            this.modifyModal.form = {
+              date: '',
+              time: '',
+              symptoms: ''
+            };
+            this.modifyModal.availableSlots = [];
+          },
+
+          async loadModifyAvailableSlots() {
+            if (!this.modifyModal.form.date || !this.modifyModal.current.doctor_id) return;
+            
+            try {
+              const response = await fetch(`get_available_slots.php?doctor_id=${this.modifyModal.current.doctor_id}&date=${this.modifyModal.form.date}`);
+              const result = await response.json();
+              
+              if (result.success) {
+                // Include the current appointment's time slot as available
+                let slots = result.data;
+                // Normalize time format: convert "15:00:00" to "15:00"
+                const normalizeTime = (timeStr) => {
+                  if (!timeStr) return '';
+                  // If time includes seconds (HH:MM:SS), remove them
+                  return timeStr.length > 5 ? timeStr.substring(0, 5) : timeStr;
+                };
+                
+                const currentTime = normalizeTime(this.modifyModal.current.time);
+                if (!slots.includes(currentTime)) {
+                  slots.push(currentTime);
+                  slots.sort();
+                }
+                this.modifyModal.availableSlots = slots;
+              }
+            } catch (error) {
+              console.error('Error loading available slots:', error);
+            }
+          },
+
+          async submitModifyAppointment() {
+            if (!this.modifyModal.form.date || !this.modifyModal.form.time) {
+              alert('Please select both date and time');
+              return;
+            }
+            
+            // Check if date is in the future
+            const selectedDate = new Date(this.modifyModal.form.date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+              alert('Cannot modify to past dates. Please select a future date.');
+              return;
+            }
+            
+            this.loading = true;
+            
+            try {
+              const response = await fetch('update_appointment.php', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  appointment_id: this.modifyModal.current.appointment_id,
+                  action: 'modify',
+                  appointment_date: this.modifyModal.form.date,
+                  time: this.modifyModal.form.time,
+                  symptoms: this.modifyModal.form.symptoms
+                })
+              });
+              
+              const result = await response.json();
+              
+              if (result.success) {
+                alert('Appointment modified successfully!');
+                this.closeModifyModal();
+                await this.loadAppointments();
+              } else {
+                alert('Failed to modify appointment: ' + result.message);
+              }
+            } catch (error) {
+              console.error('Error modifying appointment:', error);
+              alert('Error modifying appointment. Please try again.');
+            }
+            
+            this.loading = false;
+          },
+
+          async cancelAppointment(appointmentId) {
+            if (!confirm('Are you sure you want to cancel this appointment?')) {
+              return;
+            }
+            
+            try {
+              const response = await fetch('update_appointment.php', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  appointment_id: appointmentId,
+                  action: 'cancel'
+                })
+              });
+              
+              const result = await response.json();
+              
+              if (result.success) {
+                alert('Appointment cancelled successfully!');
+                await this.loadAppointments();
+              } else {
+                alert('Failed to cancel appointment: ' + result.message);
+              }
+            } catch (error) {
+              console.error('Error cancelling appointment:', error);
+              alert('Error cancelling appointment. Please try again.');
+            }
+          },
+
+          // Get today's date in YYYY-MM-DD format
+          getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          },
+        };
+      }
+    </script>
+  </body>
+</html>

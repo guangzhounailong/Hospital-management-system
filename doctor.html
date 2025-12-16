@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Doctor Dashboard - Hospital Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="bg-slate-50" x-data="doctorStore()" x-init="init()">
+    <div class="min-h-screen flex flex-col">
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b border-slate-100 px-4 lg:px-8 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button
+            class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-600"
+            @click="sidebarOpen = !sidebarOpen"
+          >
+            ☰
+          </button>
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center font-semibold">
+              HM
+            </div>
+            <div>
+              <p class="text-lg font-semibold text-slate-800">Huakang Hospital</p>
+              <p class="text-xs text-slate-500">Hospital Management Suite</p>
+            </div>
+          </div>
+        </div>
+        <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <template x-for="item in menuItems" :key="item.key">
+            <a
+              class="py-1 border-b-2 transition"
+              :href="item.href || '#'"
+              :class="currentPage === item.key ? 'text-sky-600 border-sky-500' : 'border-transparent hover:text-sky-600'"
+              @click="item.href ? null : setCurrentPage(item.key)"
+              x-text="item.label"
+            ></a>
+          </template>
+        </nav>
+        <div class="flex items-center gap-3 text-sm">
+          <div class="text-right">
+            <p class="text-slate-800 font-semibold" x-text="user.displayName"></p>
+            <p class="text-slate-500" x-text="user.roleDisplay"></p>
+          </div>
+          <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full object-cover border border-slate-200" />
+          <button @click="logout" class="text-slate-400 hover:text-slate-600 text-lg">↪</button>
+        </div>
+      </header>
+
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside
+          class="bg-white border-r border-slate-100 w-72 transform transition-all duration-200 ease-in-out z-20"
+          :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+        >
+          <div class="p-4 border-b border-slate-100">
+            <p class="text-xs uppercase text-slate-400 mb-2">Quick Links</p>
+            <div class="space-y-1">
+              <template x-for="item in menuItems" :key="item.key">
+                <a
+                  class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between"
+                  :href="item.href || '#'"
+                  :class="currentPage === item.key ? 'bg-sky-50 text-sky-600' : 'text-slate-600 hover:bg-slate-50'"
+                  @click="item.href ? null : setCurrentPage(item.key)"
+                >
+                  <span x-text="item.label"></span>
+                  <span class="text-[10px] uppercase tracking-wide" x-text="item.badge"></span>
+                </a>
+              </template>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+              <p class="text-sm font-semibold text-slate-800 mb-2">Today's Schedule</p>
+              <ul class="text-xs text-slate-600 space-y-1">
+                <li>Appointments: <span x-text="todaysAppointments.length"></span></li>
+                <li>Completed: <span x-text="todaysAppointments.filter(a => a.status === 'Completed').length"></span></li>
+                <li>Scheduled: <span x-text="todaysAppointments.filter(a => a.status === 'Scheduled').length"></span></li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto scrollbar bg-slate-50">
+          <!-- Doctor Dashboard -->
+          <div x-show="currentPage === 'dashboard'" class="p-4 lg:p-8 space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <span class="text-2xl">📅</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="todaysAppointments.length"></p>
+                    <p class="text-sm text-slate-500">Today's Appointments</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span class="text-2xl">🏥</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="user.year_experience"></p>
+                    <p class="text-sm text-slate-500">Years Experience</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span class="text-2xl">👥</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800">0</p>
+                    <p class="text-sm text-slate-500">Total Patients</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <span class="text-2xl">💰</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="'$' + user.salary.toLocaleString()"></p>
+                    <p class="text-sm text-slate-500">Annual Salary</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <!-- Recent Activity -->
+              <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Recent Activity</h3>
+                <div class="space-y-3">
+                  <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50">
+                    <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-sm">✓</div>
+                    <div class="flex-1">
+                      <p class="font-medium text-slate-800">Completed appointment with Ethan Zhang</p>
+                      <p class="text-sm text-slate-500">2 hours ago</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm">📋</div>
+                    <div class="flex-1">
+                      <p class="font-medium text-slate-800">Created medical record for Nora Li</p>
+                      <p class="text-sm text-slate-500">4 hours ago</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50">
+                    <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-sm">💊</div>
+                    <div class="flex-1">
+                      <p class="font-medium text-slate-800">Prescribed medication for Leo Wang</p>
+                      <p class="text-sm text-slate-500">1 day ago</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Actions -->
+              <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Quick Actions</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <button @click="setCurrentPage('today-appointments')" class="p-4 bg-sky-50 hover:bg-sky-100 rounded-xl text-left transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center mb-2">
+                      <span class="text-lg">📅</span>
+                    </div>
+                    <p class="font-medium text-slate-800">View Appointments</p>
+                    <p class="text-sm text-slate-500">Check today's schedule</p>
+                  </button>
+                  <button @click="setCurrentPage('create-record')" class="p-4 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-left transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mb-2">
+                      <span class="text-lg">📋</span>
+                    </div>
+                    <p class="font-medium text-slate-800">Create Record</p>
+                    <p class="text-sm text-slate-500">Write medical records</p>
+                  </button>
+                  <button @click="setCurrentPage('patient-records')" class="p-4 bg-purple-50 hover:bg-purple-100 rounded-xl text-left transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mb-2">
+                      <span class="text-lg">👥</span>
+                    </div>
+                    <p class="font-medium text-slate-800">Patient Records</p>
+                    <p class="text-sm text-slate-500">View patient histories</p>
+                  </button>
+                  <button @click="setCurrentPage('profile')" class="p-4 bg-amber-50 hover:bg-amber-100 rounded-xl text-left transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mb-2">
+                      <span class="text-lg">👨‍⚕️</span>
+                    </div>
+                    <p class="font-medium text-slate-800">My Profile</p>
+                    <p class="text-sm text-slate-500">Update information</p>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Today's Appointments -->
+          <div x-show="currentPage === 'today-appointments'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Today's Schedule</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Today's Appointments</h1>
+                  <p class="text-sm text-slate-500">Your patient appointments for today</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm text-slate-500">Date: <span class="font-medium" x-text="todayDate"></span></p>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <template x-for="appointment in todaysAppointments" :key="appointment.appointment_id">
+                  <div class="border border-slate-100 rounded-2xl p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-4">
+                      <div class="flex items-center gap-4">
+                        <img :src="appointment.patientAvatar" class="w-12 h-12 rounded-full" />
+                        <div>
+                          <p class="font-semibold text-slate-800" x-text="appointment.patientName"></p>
+                          <p class="text-sm text-slate-500" x-text="'Patient ID: ' + appointment.patient_id"></p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <p class="font-medium text-slate-800" x-text="appointment.time"></p>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium"
+                              :class="appointment.status === 'Scheduled' ? 'bg-emerald-100 text-emerald-700' : appointment.status === 'Completed' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'"
+                              x-text="appointment.status"></span>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <div class="text-sm text-slate-600">
+                        <p>Symptoms: <span x-text="appointment.symptoms"></span></p>
+                      </div>
+                      <div class="flex gap-3">
+                        <button @click="viewPatientRecord(appointment.patient_id)" class="px-4 py-2 bg-sky-100 text-sky-700 rounded-full text-sm font-medium hover:bg-sky-200">
+                          View Records
+                        </button>
+                        <button @click="createMedicalRecord(appointment)" class="px-4 py-2 bg-emerald-600 text-white rounded-full text-sm font-medium hover:bg-emerald-700">
+                          Write Record
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div x-show="todaysAppointments.length === 0" class="text-center py-12">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                  <span class="text-2xl">📅</span>
+                </div>
+                <p class="text-slate-600">No appointments scheduled for today</p>
+              </div>
+            </section>
+          </div>
+
+          <!-- Create Medical Record & Prescription -->
+          <div x-show="currentPage === 'create-record'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div>
+                <p class="text-xs uppercase text-slate-400">Medical Records</p>
+                <h1 class="text-2xl font-semibold text-slate-800">Create Medical Record & Prescription</h1>
+                <p class="text-sm text-slate-500">Write diagnosis and prescribe medication</p>
+              </div>
+
+              <form class="grid md:grid-cols-2 gap-6">
+                <!-- TODO: GET /api/appointments?doctor_id={doctor_id}&date={date} 获取医生某天预约列表 -->
+                <!-- TODO: GET /api/persons/{person_id} 获取患者基本信息 -->
+                <label class="flex flex-col gap-2">
+                  <span class="font-medium text-slate-700">Patient</span>
+                  <select class="input" x-model="recordForm.patientId">
+                    <option value="">Select Patient</option>
+                    <template x-for="patient in patients" :key="patient.person_id">
+                      <option :value="patient.person_id" x-text="patient.name + ' (' + patient.person_id + ')'"></option>
+                    </template>
+                  </select>
+                </label>
+
+                <label class="flex flex-col gap-2">
+                  <span class="font-medium text-slate-700">Appointment Date</span>
+                  <input type="date" class="input" x-model="recordForm.appointmentDate" />
+                </label>
+
+                <label class="flex flex-col gap-2 md:col-span-2">
+                  <span class="font-medium text-slate-700">Chief Complaint</span>
+                  <textarea class="input" rows="3" x-model="recordForm.symptom" placeholder="Patient's main complaint..."></textarea>
+                </label>
+
+                <label class="flex flex-col gap-2">
+                  <span class="font-medium text-slate-700">Diagnosis</span>
+                  <select class="input" x-model="recordForm.diagnosisId">
+                    <option value="">Select Diagnosis</option>
+                    <template x-for="disease in diseases" :key="disease.disease_id">
+                      <option :value="disease.disease_id" x-text="disease.name"></option>
+                    </template>
+                  </select>
+                </label>
+
+                <label class="flex flex-col gap-2">
+                  <span class="font-medium text-slate-700">Treatment Plan</span>
+                  <textarea class="input" rows="3" x-model="recordForm.treatmentPlan" placeholder="Treatment recommendations..."></textarea>
+                </label>
+
+                <label class="flex flex-col gap-2 md:col-span-2">
+                  <span class="font-medium text-slate-700">Medical Image (Optional)</span>
+                  <input type="file" class="input" accept="image/*" />
+                </label>
+              </form>
+
+              <!-- Prescription Section -->
+              <div class="border-t border-slate-100 pt-6">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Prescription</h3>
+
+                <div class="space-y-4">
+                  <div class="grid md:grid-cols-4 gap-4">
+                    <select class="input" x-model="newPrescription.medicineId">
+                      <option value="">Select Medicine</option>
+                      <template x-for="medicine in medicines" :key="medicine.medicine_id">
+                        <option :value="medicine.medicine_id" x-text="medicine.name"></option>
+                      </template>
+                    </select>
+                    <input type="text" class="input" placeholder="Dosage (e.g., 500mg)" x-model="newPrescription.dosage" />
+                    <input type="text" class="input" placeholder="Instructions" x-model="newPrescription.instructions" />
+                    <button @click="addPrescriptionItem" class="bg-sky-600 text-white px-4 py-2 rounded-full hover:bg-sky-700">
+                      Add Medicine
+                    </button>
+                  </div>
+
+                  <div class="space-y-2">
+                    <template x-for="(item, index) in prescriptionItems" :key="index">
+                      <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-xl">
+                        <span class="flex-1" x-text="getMedicineName(item.medicineId)"></span>
+                        <span class="text-sm text-slate-600" x-text="item.dosage"></span>
+                        <span class="text-sm text-slate-600" x-text="item.instructions"></span>
+                        <button @click="prescriptionItems.splice(index, 1)" class="text-rose-600 hover:text-rose-700">✕</button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-3">
+                <button @click="resetRecordForm" class="px-6 py-3 border border-slate-200 text-slate-600 rounded-full hover:bg-slate-50">
+                  Reset
+                </button>
+                <button @click="saveMedicalRecord" class="px-6 py-3 bg-emerald-600 text-white rounded-full hover:bg-emerald-700">
+                  Save Record & Prescription
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <!-- Patient Records (placeholder for future implementation) -->
+          <div x-show="currentPage === 'patient-records'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div>
+                <p class="text-xs uppercase text-slate-400">Patient Records</p>
+                <h1 class="text-2xl font-semibold text-slate-800">My Patient Records</h1>
+                <p class="text-sm text-slate-500">View and manage patient medical histories</p>
+              </div>
+
+              <div class="text-center py-12">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                  <span class="text-2xl">📋</span>
+                </div>
+                <p class="text-slate-600">Patient records feature coming soon</p>
+                <p class="text-sm text-slate-500 mt-2">This will show all your patients' medical histories</p>
+              </div>
+            </section>
+          </div>
+
+          <!-- Profile -->
+          <div x-show="currentPage === 'profile'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div>
+                <p class="text-xs uppercase text-slate-400">Profile</p>
+                <h1 class="text-2xl font-semibold text-slate-800">Doctor Profile</h1>
+                <p class="text-sm text-slate-500">View and manage your professional information</p>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-8">
+                <!-- Personal Information -->
+                <div class="space-y-6">
+                  <h3 class="text-lg font-semibold text-slate-800">Personal Information</h3>
+                  <div class="space-y-4">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Doctor ID</span>
+                      <span class="font-medium text-slate-800" x-text="user.doctor_id"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Full Name</span>
+                      <span class="font-medium text-slate-800" x-text="user.name"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Gender</span>
+                      <span class="font-medium text-slate-800" x-text="user.gender"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Age</span>
+                      <span class="font-medium text-slate-800" x-text="user.age + ' years'"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Phone</span>
+                      <span class="font-medium text-slate-800" x-text="user.phone"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Professional Information -->
+                <div class="space-y-6">
+                  <h3 class="text-lg font-semibold text-slate-800">Professional Information</h3>
+                  <div class="space-y-4">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Specialty</span>
+                      <span class="font-medium text-slate-800" x-text="user.specialty"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Department</span>
+                      <span class="font-medium text-slate-800" x-text="user.department_name"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Experience</span>
+                      <span class="font-medium text-slate-800" x-text="user.year_experience + ' years'"></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span class="text-slate-600">Salary</span>
+                      <span class="font-medium text-slate-800" x-text="'$' + user.salary.toLocaleString()"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Running Time Monitor - Fixed Bottom Right -->
+    <div x-data="runningTimeMonitor()" x-init="init()" class="fixed bottom-4 right-4 z-50">
+      <!-- Toggle Button -->
+      <button 
+        @click="expanded = !expanded" 
+        class="bg-gradient-to-br from-sky-500 to-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium"
+        :class="expanded ? 'rounded-b-none' : ''"
+      >
+        <span>💾</span>
+        <span x-show="!expanded">SQL Monitor</span>
+        <span x-show="expanded">Hide</span>
+      </button>
+      
+      <!-- Monitor Panel -->
+      <div 
+        x-show="expanded" 
+        x-transition
+        class="bg-white rounded-t-2xl shadow-2xl border border-slate-200 w-80 max-h-96 overflow-hidden flex flex-col"
+      >
+        <div class="bg-gradient-to-br from-sky-500 to-blue-600 text-white px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">💾</span>
+            <span class="font-semibold">SQL Queries</span>
+          </div>
+          <button @click="clearHistory()" class="text-white/80 hover:text-white text-xs">Clear</button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50">
+          <template x-for="(entry, index) in history" :key="index">
+            <div class="bg-white rounded-lg p-3 border border-slate-100 text-xs">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600" x-text="entry.method"></span>
+                  <span class="font-medium text-slate-700 truncate" x-text="'@' + entry.api"></span>
+                </div>
+                <span 
+                  class="font-bold px-2 py-0.5 rounded-full text-xs whitespace-nowrap ml-2"
+                  :class="entry.time < 1 ? 'bg-emerald-100 text-emerald-700' : 
+                          entry.time < 5 ? 'bg-blue-100 text-blue-700' : 
+                          entry.time < 10 ? 'bg-amber-100 text-amber-700' : 
+                          'bg-rose-100 text-rose-700'"
+                  x-text="entry.time + 'ms'"
+                ></span>
+              </div>
+              <div class="flex items-center justify-end text-slate-400 text-[10px]">
+                <span x-text="entry.timestamp"></span>
+              </div>
+            </div>
+          </template>
+          
+          <div x-show="history.length === 0" class="text-center py-8 text-slate-400">
+            <p class="text-2xl mb-2">💾</p>
+            <p class="text-sm">No SQL queries yet</p>
+            <p class="text-xs mt-1">Create medical records</p>
+          </div>
+        </div>
+        
+        <div class="bg-slate-50 px-4 py-3 border-t border-slate-200">
+          <div class="text-xs text-slate-600">
+            <div class="flex justify-between mb-1">
+              <span>Average:</span>
+              <span class="font-semibold" x-text="avgTime + 'ms'"></span>
+            </div>
+            <div class="flex justify-between">
+              <span>Total Requests:</span>
+              <span class="font-semibold" x-text="history.length"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Running Time Monitor Component
+      function runningTimeMonitor() {
+        return {
+          expanded: false,
+          history: [],
+          maxHistory: 10,
+          
+          init() {
+            this.interceptFetch();
+          },
+          
+          interceptFetch() {
+            const originalFetch = window.fetch;
+            const self = this;
+            
+            window.fetch = async function(...args) {
+              const startTime = performance.now();
+              const url = args[0];
+              const options = args[1] || {};
+              const method = options.method || 'GET';
+              
+              try {
+                const response = await originalFetch.apply(this, args);
+                const clonedResponse = response.clone();
+                
+                // Try to extract sql_queries from response
+                try {
+                  const data = await clonedResponse.json();
+                  
+                  // If response contains SQL queries, display them
+                  if (data.sql_queries && Array.isArray(data.sql_queries)) {
+                    data.sql_queries.forEach(query => {
+                      self.addEntry(
+                        query.location,           // e.g., "doctor_create_record.php:38"
+                        query.type,               // e.g., "SELECT", "INSERT"
+                        query.time                // execution time in ms
+                      );
+                    });
+                  }
+                } catch (e) {
+                  // Response is not JSON, skip
+                }
+                
+                return response;
+              } catch (error) {
+                throw error;
+              }
+            };
+          },
+          
+          addEntry(api, method, time) {
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              second: '2-digit' 
+            });
+            
+            this.history.unshift({
+              api: api,
+              method: method,
+              time: Math.round(time * 100) / 100,
+              timestamp: timestamp
+            });
+            
+            // Keep only last N entries
+            if (this.history.length > this.maxHistory) {
+              this.history = this.history.slice(0, this.maxHistory);
+            }
+          },
+          
+          clearHistory() {
+            this.history = [];
+          },
+          
+          get avgTime() {
+            if (this.history.length === 0) return 0;
+            const sum = this.history.reduce((acc, entry) => acc + entry.time, 0);
+            return Math.round((sum / this.history.length) * 100) / 100;
+          }
+        };
+      }
+
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("doctorStore", doctorStore);
+        Alpine.data("runningTimeMonitor", runningTimeMonitor);
+      });
+
+      function doctorStore() {
+        return {
+          // User State - Doctor complete information from database
+          user: {
+            doctor_id: '',
+            person_id: '',
+            name: 'Loading...',
+            gender: '',
+            age: 0,
+            phone: '',
+            specialty: '',
+            year_experience: 0,
+            salary: 0,
+            department_id: '',
+            department_name: 'Loading...',
+            displayName: 'Loading...',
+            roleDisplay: 'Doctor',
+            avatar: 'https://i.pravatar.cc/48?img=12'
+          },
+
+          // UI State
+          sidebarOpen: false,
+          currentPage: 'dashboard',
+          loading: false,
+
+          // Menu Items
+          menuItems: [
+            { key: "dashboard", label: "Dashboard", badge: "Overview" },
+            { key: "today-appointments", label: "Today's Appointments", badge: "Schedule" },
+            { key: "create-record", label: "Create Medical Record", badge: "Clinical" },
+            { key: "patient-records", label: "My Patient Records", badge: "History" },
+            { key: "profile", label: "Personal Center", badge: "Account" },
+          ],
+
+          // Data from database
+          patients: [],
+          diseases: [],
+          medicines: [],
+          todaysAppointments: [],
+          prescriptionItems: [],
+
+          // Initialize - Load all data
+          async init() {
+            await this.loadDoctorData();
+            await this.loadTodaysAppointments();
+            await this.loadPatients();
+            await this.loadDiseases();
+            await this.loadMedicines();
+          },
+
+          // Load doctor data
+          async loadDoctorData() {
+            try {
+              const response = await fetch('doctor_data.php');
+              const result = await response.json();
+              
+              if (result.success) {
+                this.user = result.data;
+              } else if (result.message === 'Unauthorized access') {
+                window.location.href = 'login.html';
+              }
+            } catch (error) {
+              console.error('Error loading doctor data:', error);
+            }
+          },
+
+          // Load today's appointments
+          async loadTodaysAppointments() {
+            try {
+              const today = new Date().toISOString().split('T')[0];
+              const response = await fetch(`doctor_appointments.php?date=${today}`);
+              const result = await response.json();
+              
+              if (result.success) {
+                this.todaysAppointments = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading appointments:', error);
+            }
+          },
+
+          // Load all patients
+          async loadPatients() {
+            try {
+              const response = await fetch('doctor_patients.php');
+              const result = await response.json();
+              
+              if (result.success) {
+                this.patients = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading patients:', error);
+            }
+          },
+
+          // Load diseases
+          async loadDiseases() {
+            try {
+              const response = await fetch('admin_diseases.php');
+              const result = await response.json();
+              
+              if (result.success) {
+                this.diseases = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading diseases:', error);
+            }
+          },
+
+          // Load medicines
+          async loadMedicines() {
+            try {
+              const response = await fetch('admin_medicines.php');
+              const result = await response.json();
+              
+              if (result.success) {
+                this.medicines = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading medicines:', error);
+            }
+          },
+
+          // Form Data
+          recordForm: {
+            patientId: '',
+            appointmentDate: '',
+            symptom: '',
+            diagnosisId: '',
+            treatmentPlan: '',
+            medicalImage: null
+          },
+
+          newPrescription: {
+            medicineId: '',
+            dosage: '',
+            instructions: ''
+          },
+
+          // Computed Properties
+          get todayDate() {
+            return new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          },
+
+          // Methods
+          setCurrentPage(page) {
+            this.currentPage = page;
+            this.sidebarOpen = false;
+          },
+
+          async logout() {
+            try {
+              await fetch('logout.php');
+            } catch (error) {
+              console.error('Error logging out:', error);
+            }
+            window.location.href = 'login.html';
+          },
+
+          // Doctor Methods
+          async viewPatientRecord(patientId) {
+            try {
+              const response = await fetch(`doctor_patient_records.php?patient_id=${patientId}`);
+              const result = await response.json();
+              
+              if (result.success) {
+                // Display patient records in a modal or navigate to records page
+                alert(`Patient: ${result.data.patient.name}\nTotal Records: ${result.data.medical_records.length}`);
+                console.log('Patient Records:', result.data);
+              } else {
+                alert('Failed to load patient records: ' + result.message);
+              }
+            } catch (error) {
+              console.error('Error loading patient records:', error);
+              alert('Error loading patient records');
+            }
+          },
+
+          createMedicalRecord(appointment) {
+            this.recordForm.patientId = appointment.patient_id;
+            this.recordForm.appointmentDate = appointment.appointment_date;
+            this.recordForm.symptom = appointment.symptoms;
+            this.recordForm.appointment_id = appointment.appointment_id;
+            this.setCurrentPage('create-record');
+          },
+
+          async saveMedicalRecord() {
+            if (!this.recordForm.patientId || !this.recordForm.diagnosisId || !this.recordForm.treatmentPlan) {
+              alert('Please fill in all required fields');
+              return;
+            }
+            
+            this.loading = true;
+            
+            // Get diagnosis name from disease ID
+            const disease = this.diseases.find(d => d.disease_id === this.recordForm.diagnosisId);
+            const diagnosisName = disease ? disease.name : this.recordForm.diagnosisId;
+            
+            // Prepare data
+            const data = {
+              patient_id: this.recordForm.patientId,
+              record_date: this.recordForm.appointmentDate || new Date().toISOString().split('T')[0],
+              diagnosis: diagnosisName,
+              treatment_plan: this.recordForm.treatmentPlan,
+              vital_signs: this.recordForm.symptom || '',
+              prescriptions: this.prescriptionItems.map(item => ({
+                medicine_id: item.medicineId,
+                dosage: item.dosage,
+                usage_statement: item.instructions,
+                validity_period: 7
+              })),
+              appointment_id: this.recordForm.appointment_id || ''
+            };
+            
+            try {
+              const response = await fetch('doctor_create_record.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
+              
+              const result = await response.json();
+              
+              if (result.success) {
+                alert('Medical record and prescriptions saved successfully!');
+                this.resetRecordForm();
+                this.prescriptionItems = [];
+                await this.loadTodaysAppointments();
+                this.setCurrentPage('today-appointments');
+              } else {
+                alert('Failed to save: ' + result.message);
+              }
+            } catch (error) {
+              console.error('Error saving medical record:', error);
+              alert('Error saving medical record');
+            }
+            
+            this.loading = false;
+          },
+
+          resetRecordForm() {
+            this.recordForm = {
+              patientId: '',
+              appointmentDate: '',
+              symptom: '',
+              diagnosisId: '',
+              treatmentPlan: '',
+              medicalImage: null,
+              appointment_id: ''
+            };
+            this.prescriptionItems = [];
+          },
+
+          getMedicineName(medicineId) {
+            const medicine = this.medicines.find(m => m.medicine_id === medicineId);
+            return medicine ? medicine.name : 'Unknown Medicine';
+          },
+
+          // Prescription methods
+          addPrescriptionItem() {
+            if (this.newPrescription.medicineId && this.newPrescription.dosage) {
+              this.prescriptionItems.push({ ...this.newPrescription });
+              this.newPrescription = { medicineId: '', dosage: '', instructions: '' };
+            }
+          },
+        };
+      }
+    </script>
+  </body>
+</html>

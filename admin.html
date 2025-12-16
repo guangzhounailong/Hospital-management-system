@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Hospital Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="bg-slate-50" x-data="adminStore()" x-init="init()">
+    <div class="min-h-screen flex flex-col">
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b border-slate-100 px-4 lg:px-8 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button
+            class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-600"
+            @click="sidebarOpen = !sidebarOpen"
+          >
+            ☰
+          </button>
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center font-semibold">
+              HM
+            </div>
+            <div>
+              <p class="text-lg font-semibold text-slate-800">Huakang Hospital</p>
+              <p class="text-xs text-slate-500">Hospital Management Suite</p>
+            </div>
+          </div>
+        </div>
+        <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <template x-for="item in menuItems" :key="item.key">
+            <a
+              class="py-1 border-b-2 transition"
+              :href="item.href || '#'"
+              :class="currentPage === item.key ? 'text-sky-600 border-sky-500' : 'border-transparent hover:text-sky-600'"
+              @click="item.href ? null : setCurrentPage(item.key)"
+              x-text="item.label"
+            ></a>
+          </template>
+        </nav>
+        <div class="flex items-center gap-3 text-sm">
+          <div class="text-right">
+            <p class="text-slate-800 font-semibold" x-text="user.displayName"></p>
+            <p class="text-slate-500" x-text="user.roleDisplay"></p>
+          </div>
+          <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full object-cover border border-slate-200" />
+          <button @click="logout" class="text-slate-400 hover:text-slate-600 text-lg">↪</button>
+        </div>
+      </header>
+
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside
+          class="bg-white border-r border-slate-100 w-72 transform transition-all duration-200 ease-in-out z-20"
+          :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+        >
+          <div class="p-4 border-b border-slate-100">
+            <p class="text-xs uppercase text-slate-400 mb-2">Quick Links</p>
+            <div class="space-y-1">
+              <template x-for="item in menuItems" :key="item.key">
+                <a
+                  class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between"
+                  :href="item.href || '#'"
+                  :class="currentPage === item.key ? 'bg-sky-50 text-sky-600' : 'text-slate-600 hover:bg-slate-50'"
+                  @click="item.href ? null : setCurrentPage(item.key)"
+                >
+                  <span x-text="item.label"></span>
+                  <span class="text-[10px] uppercase tracking-wide" x-text="item.badge"></span>
+                </a>
+              </template>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="bg-sky-50 border border-sky-100 rounded-2xl p-4">
+              <p class="text-sm font-semibold text-slate-800 mb-2">Today at a Glance</p>
+              <ul class="text-xs text-slate-600 space-y-1">
+                <li>Appointments: 32</li>
+                <li>Free Beds: 18</li>
+                <li>Doctors Online: 12</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto scrollbar bg-slate-50">
+          <!-- Admin Dashboard -->
+          <div x-show="currentPage === 'dashboard'" class="p-4 lg:p-8 space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center">
+                    <span class="text-2xl">👥</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="stats.totalPatients"></p>
+                    <p class="text-sm text-slate-500">Total Patients</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <span class="text-2xl">👨‍⚕️</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="stats.totalDoctors"></p>
+                    <p class="text-sm text-slate-500">Active Doctors</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span class="text-2xl">🏥</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="stats.totalDepartments"></p>
+                    <p class="text-sm text-slate-500">Departments</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <span class="text-2xl">📅</span>
+                  </div>
+                  <div>
+                    <p class="text-2xl font-bold text-slate-800" x-text="stats.todayAppointments"></p>
+                    <p class="text-sm text-slate-500">Today's Appointments</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <!-- Recent Appointments -->
+              <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Recent Appointments</h3>
+                <div class="space-y-3">
+                  <template x-for="appointment in recentAppointments" :key="appointment.id">
+                    <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50">
+                      <img :src="appointment.patientAvatar" class="w-10 h-10 rounded-full" />
+                      <div class="flex-1">
+                        <p class="font-medium text-slate-800" x-text="appointment.patientName"></p>
+                        <p class="text-sm text-slate-500" x-text="appointment.doctor + ' • ' + appointment.time"></p>
+                      </div>
+                      <span class="px-3 py-1 rounded-full text-xs font-medium" :class="appointment.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'" x-text="appointment.status"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- System Status -->
+              <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">System Status</h3>
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-600">Database</span>
+                    <span class="text-emerald-600 font-medium">Online</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-600">API Services</span>
+                    <span class="text-emerald-600 font-medium">Running</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-600">Backup Status</span>
+                    <span class="text-emerald-600 font-medium">Last: 2h ago</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Patients Management -->
+          <div x-show="currentPage === 'patients'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Patients</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Patient Management</h1>
+                  <p class="text-sm text-slate-500">Profiles, contact details, demographic info</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search name / phone / ID"
+                    class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
+                    x-model="tableConfig.patients.search"
+                  />
+                  <button
+                    class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
+                    @click="openModal('patient', 'create')"
+                  >
+                    ➕ Add Patient
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Patient ID</th>
+                      <th class="px-4 py-3 text-left">Name</th>
+                      <th class="px-4 py-3 text-left">Phone</th>
+                      <th class="px-4 py-3 text-left">Gender</th>
+                      <th class="px-4 py-3 text-left">Age</th>
+                      <th class="px-4 py-3 text-left">Height(cm)</th>
+                      <th class="px-4 py-3 text-left">Weight(kg)</th>
+                      <th class="px-4 py-3 text-left">Blood Type</th>
+                      <th class="px-4 py-3 text-left">Address</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="patient in pagedItems('patients')" :key="patient.person_id">
+                      <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-700" x-text="patient.person_id"></td>
+                        <td class="px-4 py-3" x-text="patient.name"></td>
+                        <td class="px-4 py-3" x-text="patient.phone"></td>
+                        <td class="px-4 py-3" x-text="patient.gender"></td>
+                        <td class="px-4 py-3" x-text="patient.age"></td>
+                        <td class="px-4 py-3" x-text="patient.height_cm"></td>
+                        <td class="px-4 py-3" x-text="patient.weight_kg"></td>
+                        <td class="px-4 py-3" x-text="patient.blood_type"></td>
+                        <td class="px-4 py-3" x-text="patient.address"></td>
+                        <td class="px-4 py-3 space-x-3">
+                          <button class="text-sky-600 hover:underline" @click="openModal('patient', 'view', patient)">View</button>
+                          <button class="text-amber-600 hover:underline" @click="openModal('patient', 'edit', patient)">Edit</button>
+                          <button class="text-rose-600 hover:underline" @click="confirmDelete('patient', patient.person_id)">Delete</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <p>
+                  Total
+                  <span class="font-semibold text-slate-700" x-text="filteredItems('patients').length"></span>
+                  patients
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.patients.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('patients', -1)"
+                  >
+                    Prev
+                  </button>
+                  <p>
+                    Page
+                    <span x-text="tableConfig.patients.page"></span>
+                    /
+                    <span x-text="totalPages('patients')"></span>
+                  </p>
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.patients.page >= totalPages('patients') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('patients', 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Doctors Management -->
+          <div x-show="currentPage === 'doctors'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Doctors</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Doctor Management</h1>
+                  <p class="text-sm text-slate-500">Medical staff profiles, specialties, and department assignments</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search name / specialty / department"
+                    class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
+                    x-model="tableConfig.doctors.search"
+                  />
+                  <button
+                    class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
+                    @click="openModal('doctor', 'create')"
+                  >
+                    ➕ Add Doctor
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Doctor ID</th>
+                      <th class="px-4 py-3 text-left">Name</th>
+                      <th class="px-4 py-3 text-left">Specialty</th>
+                      <th class="px-4 py-3 text-left">Department</th>
+                      <th class="px-4 py-3 text-left">Phone</th>
+                      <th class="px-4 py-3 text-left">Experience</th>
+                      <th class="px-4 py-3 text-left">Salary</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="doctor in pagedItems('doctors')" :key="doctor.doctor_id">
+                      <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-700" x-text="doctor.doctor_id"></td>
+                        <td class="px-4 py-3" x-text="doctor.name"></td>
+                        <td class="px-4 py-3" x-text="doctor.specialty"></td>
+                        <td class="px-4 py-3" x-text="doctor.department_name"></td>
+                        <td class="px-4 py-3" x-text="doctor.phone"></td>
+                        <td class="px-4 py-3" x-text="doctor.year_experience + ' years'"></td>
+                        <td class="px-4 py-3" x-text="'$' + doctor.salary"></td>
+                        <td class="px-4 py-3 space-x-3">
+                          <button class="text-sky-600 hover:underline" @click="openModal('doctor', 'view', doctor)">View</button>
+                          <button class="text-amber-600 hover:underline" @click="openModal('doctor', 'edit', doctor)">Edit</button>
+                          <button class="text-rose-600 hover:underline" @click="confirmDelete('doctor', doctor.doctor_id)">Delete</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <p>
+                  Total
+                  <span class="font-semibold text-slate-700" x-text="filteredItems('doctors').length"></span>
+                  doctors
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.doctors.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('doctors', -1)"
+                  >
+                    Prev
+                  </button>
+                  <p>
+                    Page
+                    <span x-text="tableConfig.doctors.page"></span>
+                    /
+                    <span x-text="totalPages('doctors')"></span>
+                  </p>
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.doctors.page >= totalPages('doctors') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('doctors', 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Nurse Management -->
+          <div x-show="currentPage === 'nurses'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Nurses</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Nurse Management</h1>
+                  <p class="text-sm text-slate-500">Nursing staff profiles and department assignments</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search name / title / department"
+                    class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
+                    x-model="tableConfig.nurses.search"
+                  />
+                  <button
+                    class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
+                    @click="openModal('nurse', 'create')"
+                  >
+                    ➕ Add Nurse
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Nurse ID</th>
+                      <th class="px-4 py-3 text-left">Name</th>
+                      <th class="px-4 py-3 text-left">Title</th>
+                      <th class="px-4 py-3 text-left">Schedule</th>
+                      <th class="px-4 py-3 text-left">Department</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="nurse in pagedItems('nurses')" :key="nurse.nurse_id">
+                      <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-700" x-text="nurse.nurse_id"></td>
+                        <td class="px-4 py-3" x-text="nurse.name"></td>
+                        <td class="px-4 py-3" x-text="nurse.title"></td>
+                        <td class="px-4 py-3" x-text="nurse.schedule"></td>
+                        <td class="px-4 py-3" x-text="nurse.department_name"></td>
+                        <td class="px-4 py-3 space-x-3">
+                          <button class="text-sky-600 hover:underline" @click="openModal('nurse', 'view', nurse)">View</button>
+                          <button class="text-amber-600 hover:underline" @click="openModal('nurse', 'edit', nurse)">Edit</button>
+                          <button class="text-rose-600 hover:underline" @click="confirmDelete('nurse', nurse.nurse_id)">Delete</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <p>
+                  Total
+                  <span class="font-semibold text-slate-700" x-text="filteredItems('nurses').length"></span>
+                  nurses
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.nurses.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('nurses', -1)"
+                  >
+                    Prev
+                  </button>
+                  <p>
+                    Page
+                    <span x-text="tableConfig.nurses.page"></span>
+                    /
+                    <span x-text="totalPages('nurses')"></span>
+                  </p>
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.nurses.page >= totalPages('nurses') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('nurses', 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Departments & Wards Management -->
+          <div x-show="currentPage === 'departments'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Departments</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Department Management</h1>
+                  <p class="text-sm text-slate-500">Medical departments and their information</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search department / ward / location"
+                    class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
+                    x-model="tableConfig.departments.search"
+                  />
+                  <button
+                    class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
+                    @click="openModal('department', 'create')"
+                  >
+                    ➕ Add Department
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Dept ID</th>
+                      <th class="px-4 py-3 text-left">Department Name</th>
+                      <th class="px-4 py-3 text-left">Location</th>
+                      <th class="px-4 py-3 text-left">Contact</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="dept in pagedItems('departments')" :key="dept.department_id">
+                      <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-700" x-text="dept.department_id"></td>
+                        <td class="px-4 py-3" x-text="dept.name"></td>
+                        <td class="px-4 py-3" x-text="dept.location"></td>
+                        <td class="px-4 py-3" x-text="dept.contact"></td>
+                        <td class="px-4 py-3 space-x-3">
+                          <button class="text-sky-600 hover:underline" @click="openModal('department', 'view', dept)">View</button>
+                          <button class="text-amber-600 hover:underline" @click="openModal('department', 'edit', dept)">Edit</button>
+                          <button class="text-rose-600 hover:underline" @click="confirmDelete('department', dept.department_id)">Delete</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <p>
+                  Total
+                  <span class="font-semibold text-slate-700" x-text="filteredItems('departments').length"></span>
+                  departments
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.departments.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('departments', -1)"
+                  >
+                    Prev
+                  </button>
+                  <p>
+                    Page
+                    <span x-text="tableConfig.departments.page"></span>
+                    /
+                    <span x-text="totalPages('departments')"></span>
+                  </p>
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.departments.page >= totalPages('departments') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('departments', 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Wards Management -->
+          <div x-show="currentPage === 'wards'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Wards</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Ward Management</h1>
+                  <p class="text-sm text-slate-500">Hospital ward configurations and bed management</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search ward number / type"
+                    class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
+                    x-model="tableConfig.wards.search"
+                  />
+                  <button
+                    class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
+                    @click="openModal('ward', 'create')"
+                  >
+                    ➕ Add Ward
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Ward ID</th>
+                      <th class="px-4 py-3 text-left">Ward Number</th>
+                      <th class="px-4 py-3 text-left">Type</th>
+                      <th class="px-4 py-3 text-left">Bed Count</th>
+                      <th class="px-4 py-3 text-left">Current Occupancy</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="ward in pagedItems('wards')" :key="ward.ward_id">
+                      <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-700" x-text="ward.ward_id"></td>
+                        <td class="px-4 py-3" x-text="ward.ward_number"></td>
+                        <td class="px-4 py-3" x-text="ward.ward_type"></td>
+                        <td class="px-4 py-3" x-text="ward.bed_count"></td>
+                        <td class="px-4 py-3">
+                          <span :class="ward.current_occupancy >= ward.bed_count ? 'text-rose-600 font-medium' : 'text-slate-700'" x-text="ward.current_occupancy + ' / ' + ward.bed_count"></span>
+                        </td>
+                        <td class="px-4 py-3 space-x-3">
+                          <button class="text-sky-600 hover:underline" @click="openModal('ward', 'view', ward)">View</button>
+                          <button class="text-amber-600 hover:underline" @click="openModal('ward', 'edit', ward)">Edit</button>
+                          <button class="text-rose-600 hover:underline" @click="confirmDelete('ward', ward.ward_id)">Delete</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <p>
+                  Total
+                  <span class="font-semibold text-slate-700" x-text="filteredItems('wards').length"></span>
+                  wards
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.wards.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('wards', -1)"
+                  >
+                    Prev
+                  </button>
+                  <p>
+                    Page
+                    <span x-text="tableConfig.wards.page"></span>
+                    /
+                    <span x-text="totalPages('wards')"></span>
+                  </p>
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.wards.page >= totalPages('wards') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('wards', 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Medicine Management -->
+          <div x-show="currentPage === 'medicines'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Medicines</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Medicine Management</h1>
+                  <p class="text-sm text-slate-500">Pharmacy inventory and medication details</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search medicine name / manufacturer"
+                    class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
+                    x-model="tableConfig.medicines.search"
+                  />
+                  <button
+                    class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
+                    @click="openModal('medicine', 'create')"
+                  >
+                    ➕ Add Medicine
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Medicine ID</th>
+                      <th class="px-4 py-3 text-left">Name</th>
+                      <th class="px-4 py-3 text-left">Manufacturer</th>
+                      <th class="px-4 py-3 text-left">Price</th>
+                      <th class="px-4 py-3 text-left">Stock</th>
+                      <th class="px-4 py-3 text-left">Type</th>
+                      <th class="px-4 py-3 text-left">Form</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="medicine in pagedItems('medicines')" :key="medicine.medicine_id">
+                      <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-700" x-text="medicine.medicine_id"></td>
+                        <td class="px-4 py-3" x-text="medicine.name"></td>
+                        <td class="px-4 py-3" x-text="medicine.manufacturer"></td>
+                        <td class="px-4 py-3" x-text="'$' + medicine.price"></td>
+                        <td class="px-4 py-3">
+                          <span :class="medicine.stock < 10 ? 'text-rose-600 font-medium' : 'text-slate-700'" x-text="medicine.stock"></span>
+                        </td>
+                        <td class="px-4 py-3" x-text="medicine.type"></td>
+                        <td class="px-4 py-3" x-text="medicine.form"></td>
+                        <td class="px-4 py-3 space-x-3">
+                          <button class="text-sky-600 hover:underline" @click="openModal('medicine', 'view', medicine)">View</button>
+                          <button class="text-amber-600 hover:underline" @click="openModal('medicine', 'edit', medicine)">Edit</button>
+                          <button class="text-rose-600 hover:underline" @click="confirmDelete('medicine', medicine.medicine_id)">Delete</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <p>
+                  Total
+                  <span class="font-semibold text-slate-700" x-text="filteredItems('medicines').length"></span>
+                  medicines
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.medicines.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('medicines', -1)"
+                  >
+                    Prev
+                  </button>
+                  <p>
+                    Page
+                    <span x-text="tableConfig.medicines.page"></span>
+                    /
+                    <span x-text="totalPages('medicines')"></span>
+                  </p>
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.medicines.page >= totalPages('medicines') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('medicines', 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Disease Management -->
+          <div x-show="currentPage === 'diseases'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Diseases</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Disease Management</h1>
+                  <p class="text-sm text-slate-500">Medical conditions and treatment information</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search disease name / category"
+                    class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
+                    x-model="tableConfig.diseases.search"
+                  />
+                  <button
+                    class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
+                    @click="openModal('disease', 'create')"
+                  >
+                    ➕ Add Disease
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Disease ID</th>
+                      <th class="px-4 py-3 text-left">Name</th>
+                      <th class="px-4 py-3 text-left">Category</th>
+                      <th class="px-4 py-3 text-left">Description</th>
+                      <th class="px-4 py-3 text-left">Common Treatments</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="disease in pagedItems('diseases')" :key="disease.disease_id">
+                      <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-700" x-text="disease.disease_id"></td>
+                        <td class="px-4 py-3" x-text="disease.name"></td>
+                        <td class="px-4 py-3" x-text="disease.category"></td>
+                        <td class="px-4 py-3 max-w-xs truncate" x-text="disease.description"></td>
+                        <td class="px-4 py-3 max-w-xs truncate" x-text="disease.common_treatments"></td>
+                        <td class="px-4 py-3 space-x-3">
+                          <button class="text-sky-600 hover:underline" @click="openModal('disease', 'view', disease)">View</button>
+                          <button class="text-amber-600 hover:underline" @click="openModal('disease', 'edit', disease)">Edit</button>
+                          <button class="text-rose-600 hover:underline" @click="confirmDelete('disease', disease.disease_id)">Delete</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <p>
+                  Total
+                  <span class="font-semibold text-slate-700" x-text="filteredItems('diseases').length"></span>
+                  diseases
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.diseases.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('diseases', -1)"
+                  >
+                    Prev
+                  </button>
+                  <p>
+                    Page
+                    <span x-text="tableConfig.diseases.page"></span>
+                    /
+                    <span x-text="totalPages('diseases')"></span>
+                  </p>
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.diseases.page >= totalPages('diseases') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('diseases', 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Appointments Management -->
+          <div x-show="currentPage === 'appointments'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Appointments</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Appointment Management</h1>
+                  <p class="text-sm text-slate-500">Patient appointments and scheduling</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search patient / doctor / date"
+                    class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
+                    x-model="tableConfig.appointments.search"
+                  />
+                  <button
+                    class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
+                    @click="openModal('appointment', 'create')"
+                  >
+                    ➕ Schedule Appointment
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Appointment ID</th>
+                      <th class="px-4 py-3 text-left">Patient</th>
+                      <th class="px-4 py-3 text-left">Doctor</th>
+                      <th class="px-4 py-3 text-left">Date</th>
+                      <th class="px-4 py-3 text-left">Time</th>
+                      <th class="px-4 py-3 text-left">Status</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="appointment in pagedItems('appointments')" :key="appointment.appointment_id">
+                      <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-700" x-text="appointment.appointment_id"></td>
+                        <td class="px-4 py-3" x-text="appointment.patient_name"></td>
+                        <td class="px-4 py-3" x-text="appointment.doctor_name"></td>
+                        <td class="px-4 py-3" x-text="appointment.appointment_date"></td>
+                        <td class="px-4 py-3" x-text="appointment.time"></td>
+                        <td class="px-4 py-3">
+                          <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                :class="appointment.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : appointment.status === 'pending' ? 'bg-amber-100 text-amber-700' : appointment.status === 'completed' ? 'bg-slate-100 text-slate-700' : 'bg-rose-100 text-rose-700'"
+                                x-text="appointment.status"></span>
+                        </td>
+                        <td class="px-4 py-3 space-x-3">
+                          <button class="text-sky-600 hover:underline" @click="openModal('appointment', 'view', appointment)">View</button>
+                          <button class="text-amber-600 hover:underline" @click="openModal('appointment', 'edit', appointment)">Edit</button>
+                          <button class="text-rose-600 hover:underline" @click="confirmDelete('appointment', appointment.appointment_id)">Cancel</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <p>
+                  Total
+                  <span class="font-semibold text-slate-700" x-text="filteredItems('appointments').length"></span>
+                  appointments
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.appointments.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('appointments', -1)"
+                  >
+                    Prev
+                  </button>
+                  <p>
+                    Page
+                    <span x-text="tableConfig.appointments.page"></span>
+                    /
+                    <span x-text="totalPages('appointments')"></span>
+                  </p>
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.appointments.page >= totalPages('appointments') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('appointments', 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Records & Prescriptions Management -->
+          <div x-show="currentPage === 'records'" class="p-4 lg:p-8 space-y-8">
+            <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Medical Records</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Medical Records & Prescriptions</h1>
+                  <p class="text-sm text-slate-500">Patient medical histories and prescriptions</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search patient / doctor / diagnosis"
+                    class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
+                    x-model="tableConfig.records.search"
+                  />
+                  <button
+                    class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
+                    @click="openModal('record', 'create')"
+                  >
+                    ➕ Create Record
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Record ID</th>
+                      <th class="px-4 py-3 text-left">Patient</th>
+                      <th class="px-4 py-3 text-left">Doctor</th>
+                      <th class="px-4 py-3 text-left">Date</th>
+                      <th class="px-4 py-3 text-left">Diagnosis</th>
+                      <th class="px-4 py-3 text-left">Prescription</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="record in pagedItems('records')" :key="record.record_id">
+                      <tr class="border-t border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-700" x-text="record.record_id"></td>
+                        <td class="px-4 py-3" x-text="record.patient_name"></td>
+                        <td class="px-4 py-3" x-text="record.doctor_name"></td>
+                        <td class="px-4 py-3" x-text="record.record_date"></td>
+                        <td class="px-4 py-3 max-w-xs truncate" x-text="record.diagnosis"></td>
+                        <td class="px-4 py-3">
+                          <span x-show="record.prescription_count > 0" class="text-sky-600" x-text="record.prescription_count + ' items'"></span>
+                          <span x-show="record.prescription_count === 0" class="text-slate-400">None</span>
+                        </td>
+                        <td class="px-4 py-3 space-x-3">
+                          <button class="text-sky-600 hover:underline" @click="openModal('record', 'view', record)">View</button>
+                          <button class="text-amber-600 hover:underline" @click="openModal('record', 'edit', record)">Edit</button>
+                          <button class="text-rose-600 hover:underline" @click="confirmDelete('record', record.record_id)">Delete</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <p>
+                  Total
+                  <span class="font-semibold text-slate-700" x-text="filteredItems('records').length"></span>
+                  records
+                </p>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.records.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('records', -1)"
+                  >
+                    Prev
+                  </button>
+                  <p>
+                    Page
+                    <span x-text="tableConfig.records.page"></span>
+                    /
+                    <span x-text="totalPages('records')"></span>
+                  </p>
+                  <button
+                    class="px-3 py-1 border rounded-full"
+                    :class="tableConfig.records.page >= totalPages('records') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    @click="changePage('records', 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div
+      x-show="modal.visible"
+      x-transition
+      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-3xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto scrollbar">
+        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <div>
+            <p class="text-lg font-semibold text-slate-800" x-text="modalTitle"></p>
+            <p class="text-xs text-slate-500" x-text="'Module: ' + modal.type.charAt(0).toUpperCase() + modal.type.slice(1) + 's'"></p>
+          </div>
+          <button class="text-slate-400 hover:text-slate-600" @click="closeModal">✕</button>
+        </div>
+        <div class="p-6 space-y-6 text-sm">
+          <!-- Patient Form -->
+          <form x-show="modal.type === 'patient'" class="grid md:grid-cols-2 gap-4">
+            <!-- TODO: GET /api/persons/{person_id} and /api/patients/{patient_id} fetch patient detail -->
+            <!-- TODO: POST /api/persons create person, then POST /api/patients create patient -->
+            <!-- TODO: PUT /api/persons/{person_id} and /api/patients/{patient_id} update patient info -->
+            <label class="flex flex-col gap-1">
+              <span>Patient ID</span>
+              <input class="input" x-model="modal.form.person_id" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Name</span>
+              <input class="input" x-model="modal.form.name" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Phone</span>
+              <input class="input" x-model="modal.form.phone" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Gender</span>
+              <select class="input" x-model="modal.form.gender" :disabled="modal.mode === 'view'">
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+                <option value="O">Other</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Age</span>
+              <input type="number" class="input" x-model="modal.form.age" :disabled="modal.mode === 'view'" />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Height (cm)</span>
+              <input type="number" class="input" x-model="modal.form.height_cm" :disabled="modal.mode === 'view'" />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Weight (kg)</span>
+              <input type="number" class="input" x-model="modal.form.weight_kg" :disabled="modal.mode === 'view'" />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Blood Type</span>
+              <select class="input" x-model="modal.form.blood_type" :disabled="modal.mode === 'view'">
+                <option value="">Select Blood Type</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="AB">AB</option>
+                <option value="O">O</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 md:col-span-2">
+              <span>Address</span>
+              <input class="input" x-model="modal.form.address" :disabled="modal.mode === 'view'" placeholder="Enter patient address" />
+            </label>
+          </form>
+
+          <!-- Doctor Form -->
+          <form x-show="modal.type === 'doctor'" class="grid md:grid-cols-2 gap-4">
+            <!-- TODO: GET /api/persons/{person_id} and /api/doctors/{doctor_id} fetch doctor detail -->
+            <!-- TODO: POST /api/persons create person, then POST /api/doctors create doctor -->
+            <!-- TODO: PUT /api/persons/{person_id} and /api/doctors/{doctor_id} update doctor info -->
+            <label class="flex flex-col gap-1">
+              <span>Doctor ID</span>
+              <input class="input" x-model="modal.form.doctor_id" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Name</span>
+              <input class="input" x-model="modal.form.name" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Specialty</span>
+              <input class="input" x-model="modal.form.specialty" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Department</span>
+              <select class="input" x-model="modal.form.department_id" :disabled="modal.mode === 'view'">
+                <option value="">Select Department</option>
+                <template x-for="dept in departments" :key="dept.department_id">
+                  <option :value="dept.department_id" x-text="dept.name"></option>
+                </template>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Phone</span>
+              <input class="input" x-model="modal.form.phone" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Experience (Years)</span>
+              <input type="number" class="input" x-model="modal.form.year_experience" :disabled="modal.mode === 'view'" min="0" />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Salary</span>
+              <input type="number" class="input" x-model="modal.form.salary" :disabled="modal.mode === 'view'" />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Title</span>
+              <select class="input" x-model="modal.form.title" :disabled="modal.mode === 'view'">
+                <option value="Junior">Junior</option>
+                <option value="Specialist">Specialist</option>
+                <option value="Consultant">Consultant</option>
+                <option value="Senior">Senior</option>
+              </select>
+            </label>
+          </form>
+
+
+          <!-- Department Form -->
+          <form x-show="modal.type === 'department'" class="grid md:grid-cols-2 gap-4">
+            <!-- TODO: GET /api/departments/{id} fetch department detail -->
+            <!-- TODO: POST /api/departments create department, body: {department_id,name,location,contact} -->
+            <!-- TODO: PUT /api/departments/{id} update department info -->
+            <label class="flex flex-col gap-1">
+              <span>Department ID</span>
+              <input class="input" x-model="modal.form.department_id" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Name</span>
+              <input class="input" x-model="modal.form.name" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1 md:col-span-2">
+              <span>Location</span>
+              <input class="input" x-model="modal.form.location" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Contact</span>
+              <input class="input" x-model="modal.form.contact" :disabled="modal.mode === 'view'" required />
+            </label>
+          </form>
+
+          <!-- Ward Form -->
+          <form x-show="modal.type === 'ward'" class="grid md:grid-cols-2 gap-4">
+            <!-- TODO: GET /api/wards/{id} fetch ward detail -->
+            <!-- TODO: POST /api/wards create ward, body: {ward_id,ward_number,ward_type,bed_count,current_occupancy} -->
+            <!-- TODO: PUT /api/wards/{id} update ward info -->
+            <label class="flex flex-col gap-1">
+              <span>Ward ID</span>
+              <input class="input" x-model="modal.form.ward_id" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Ward Number</span>
+              <input class="input" x-model="modal.form.ward_number" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Ward Type</span>
+              <select class="input" x-model="modal.form.ward_type" :disabled="modal.mode === 'view'">
+                <option value="">Select Ward Type</option>
+                <option value="General">General</option>
+                <option value="ICU">ICU</option>
+                <option value="Surgical">Surgical</option>
+                <option value="Orthopedic">Orthopedic</option>
+                <option value="Pediatric">Pediatric</option>
+                <option value="Maternity">Maternity</option>
+                <option value="Emergency">Emergency</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Bed Count</span>
+              <input type="number" class="input" x-model="modal.form.bed_count" :disabled="modal.mode === 'view'" min="1" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Current Occupancy</span>
+              <input type="number" class="input" x-model="modal.form.current_occupancy" :disabled="modal.mode === 'view'" min="0" required />
+            </label>
+          </form>
+
+          <!-- Medicine Form -->
+          <form x-show="modal.type === 'medicine'" class="grid md:grid-cols-2 gap-4">
+            <!-- TODO: GET /api/medicines/{id} fetch medicine detail -->
+            <!-- TODO: POST /api/medicines create medicine, body: {medicine_id,name,manufacturer,price,stock,type,form} -->
+            <!-- TODO: PUT /api/medicines/{id} update medicine info -->
+            <label class="flex flex-col gap-1">
+              <span>Medicine ID</span>
+              <input class="input" x-model="modal.form.medicine_id" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Name</span>
+              <input class="input" x-model="modal.form.name" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Manufacturer</span>
+              <input class="input" x-model="modal.form.manufacturer" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Price</span>
+              <input type="number" step="0.01" class="input" x-model="modal.form.price" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Stock</span>
+              <input type="number" class="input" x-model="modal.form.stock" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Type</span>
+              <input class="input" x-model="modal.form.type" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Form</span>
+              <select class="input" x-model="modal.form.form" :disabled="modal.mode === 'view'">
+                <option value="Tablet">Tablet</option>
+                <option value="Capsule">Capsule</option>
+                <option value="Injection">Injection</option>
+                <option value="Syrup">Syrup</option>
+                <option value="Cream">Cream</option>
+              </select>
+            </label>
+          </form>
+
+          <!-- Nurse Form -->
+          <form x-show="modal.type === 'nurse'" class="grid md:grid-cols-2 gap-4">
+            <!-- TODO: GET /api/nurses/{id} fetch nurse detail -->
+            <!-- TODO: POST /api/nurses create nurse, body: {nurse_id,person_id,name,phone,gender,age,password,title,schedule,department_id} -->
+            <!-- TODO: PUT /api/nurses/{id} update nurse info -->
+            <label class="flex flex-col gap-1">
+              <span>Nurse ID</span>
+              <input class="input" x-model="modal.form.nurse_id" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Name</span>
+              <input class="input" x-model="modal.form.name" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Phone</span>
+              <input class="input" x-model="modal.form.phone" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Gender</span>
+              <select class="input" x-model="modal.form.gender" :disabled="modal.mode === 'view'">
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+                <option value="O">Other</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Age</span>
+              <input type="number" class="input" x-model="modal.form.age" :disabled="modal.mode === 'view'" min="0" />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Title</span>
+              <select class="input" x-model="modal.form.title" :disabled="modal.mode === 'view'">
+                <option value="Junior">Junior</option>
+                <option value="Senior">Senior</option>
+                <option value="Head Nurse">Head Nurse</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 md:col-span-2">
+              <span>Schedule</span>
+              <input class="input" x-model="modal.form.schedule" :disabled="modal.mode === 'view'" placeholder="e.g., Day Shift, Night Shift, Rotating" />
+            </label>
+            <label class="flex flex-col gap-1 md:col-span-2">
+              <span>Department</span>
+              <select class="input" x-model="modal.form.department_id" :disabled="modal.mode === 'view'">
+                <option value="">Select Department</option>
+                <template x-for="dept in departments" :key="dept.department_id">
+                  <option :value="dept.department_id" x-text="dept.name"></option>
+                </template>
+              </select>
+            </label>
+          </form>
+
+          <!-- Disease Form -->
+          <form x-show="modal.type === 'disease'" class="grid md:grid-cols-2 gap-4">
+            <!-- TODO: GET /api/diseases/{id} fetch disease detail -->
+            <!-- TODO: POST /api/diseases create disease, body: {disease_id,disease_name,category,description,common_treatments} -->
+            <!-- TODO: PUT /api/diseases/{id} update disease info -->
+            <label class="flex flex-col gap-1">
+              <span>Disease ID</span>
+              <input class="input" x-model="modal.form.disease_id" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Disease Name</span>
+              <input class="input" x-model="modal.form.disease_name" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Category</span>
+              <select class="input" x-model="modal.form.category" :disabled="modal.mode === 'view'">
+                <option value="Infectious">Infectious</option>
+                <option value="Chronic">Chronic</option>
+                <option value="Acute">Acute</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 md:col-span-2">
+              <span>Description</span>
+              <textarea class="input" rows="3" x-model="modal.form.description" :disabled="modal.mode === 'view'" placeholder="Disease description..."></textarea>
+            </label>
+            <label class="flex flex-col gap-1 md:col-span-2">
+              <span>Common Treatments</span>
+              <textarea class="input" rows="3" x-model="modal.form.common_treatments" :disabled="modal.mode === 'view'" placeholder="Common treatment methods..."></textarea>
+            </label>
+          </form>
+
+          <!-- Appointment Form -->
+          <form x-show="modal.type === 'appointment'" class="grid md:grid-cols-2 gap-4">
+            <!-- TODO: GET /api/appointments/{appointment_id} fetch appointment detail -->
+            <!-- TODO: POST /api/appointments create appointment, body: {patient_id,doctor_id,appointment_date,time,symptoms,status} -->
+            <!-- TODO: PUT /api/appointments/{appointment_id} update appointment info -->
+            <label class="flex flex-col gap-1">
+              <span>Appointment ID</span>
+              <input class="input" x-model="modal.form.appointment_id" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Patient</span>
+              <select class="input" x-model="modal.form.patient_id" :disabled="modal.mode === 'view'">
+                <option value="">Select Patient</option>
+                <template x-for="patient in patients" :key="patient.person_id">
+                  <option :value="patient.person_id" x-text="patient.name + ' (' + patient.person_id + ')'"></option>
+                </template>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Doctor</span>
+              <select class="input" x-model="modal.form.doctor_id" :disabled="modal.mode === 'view'">
+                <option value="">Select Doctor</option>
+                <template x-for="doctor in doctors" :key="doctor.doctor_id">
+                  <option :value="doctor.doctor_id" x-text="doctor.name + ' (' + doctor.specialty + ')'"></option>
+                </template>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Date</span>
+              <input type="date" class="input" x-model="modal.form.appointment_date" :disabled="modal.mode === 'view'" :min="getTodayDate()" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Time</span>
+              <input type="time" class="input" x-model="modal.form.time" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Status</span>
+              <select class="input" x-model="modal.form.status" :disabled="modal.mode === 'view'">
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 md:col-span-2">
+              <span>Symptoms</span>
+              <textarea class="input" rows="3" x-model="modal.form.symptom" :disabled="modal.mode === 'view'" placeholder="Describe patient's symptoms..."></textarea>
+            </label>
+          </form>
+
+          <!-- Medical Record Form -->
+          <form x-show="modal.type === 'record'" class="grid md:grid-cols-2 gap-4">
+            <!-- TODO: GET /api/records/{id} fetch medical record detail -->
+            <!-- TODO: POST /api/records create medical record, body: {record_id,patient_id,doctor_id,record_date,diagnosis,treatment_plan,medical_image} -->
+            <!-- TODO: PUT /api/records/{id} update medical record info -->
+            <label class="flex flex-col gap-1">
+              <span>Record ID</span>
+              <input class="input" x-model="modal.form.record_id" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Patient</span>
+              <select class="input" x-model="modal.form.patient_id" :disabled="modal.mode === 'view'">
+                <option value="">Select Patient</option>
+                <template x-for="patient in patients" :key="patient.person_id">
+                  <option :value="patient.person_id" x-text="patient.name + ' (' + patient.person_id + ')'"></option>
+                </template>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Doctor</span>
+              <select class="input" x-model="modal.form.doctor_id" :disabled="modal.mode === 'view'">
+                <option value="">Select Doctor</option>
+                <template x-for="doctor in doctors" :key="doctor.doctor_id">
+                  <option :value="doctor.doctor_id" x-text="doctor.name + ' (' + doctor.specialty + ')'"></option>
+                </template>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Record Date</span>
+              <input type="date" class="input" x-model="modal.form.record_date" :disabled="modal.mode === 'view'" required />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Diagnosis</span>
+              <select class="input" x-model="modal.form.diagnosis" :disabled="modal.mode === 'view'">
+                <option value="">Select Diagnosis</option>
+                <option value="Common Cold">Common Cold</option>
+                <option value="Hypertension">Hypertension</option>
+                <option value="Diabetes Mellitus">Diabetes Mellitus</option>
+                <option value="Acute Bronchitis">Acute Bronchitis</option>
+                <option value="Gastritis">Gastritis</option>
+                <option value="Migraine">Migraine</option>
+                <option value="Osteoarthritis">Osteoarthritis</option>
+                <option value="Pneumonia">Pneumonia</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 md:col-span-2">
+              <span>Treatment Plan</span>
+              <textarea class="input" rows="3" x-model="modal.form.treatment_plan" :disabled="modal.mode === 'view'" placeholder="Treatment recommendations..."></textarea>
+            </label>
+            <label class="flex flex-col gap-1 md:col-span-2">
+              <span>Medical Image (Optional)</span>
+              <input type="file" class="input" accept="image/*" :disabled="modal.mode === 'view'" />
+            </label>
+          </form>
+        </div>
+        <div class="border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3">
+          <button class="px-4 py-2 rounded-full border border-slate-200 text-slate-600" @click="closeModal">Cancel</button>
+          <button
+            class="px-4 py-2 rounded-full bg-sky-600 text-white disabled:opacity-50"
+            :disabled="modal.mode === 'view'"
+            @click="submitModal"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Running Time Monitor - Fixed Bottom Right -->
+    <div x-data="runningTimeMonitor()" x-init="init()" class="fixed bottom-4 right-4 z-50">
+      <!-- Toggle Button -->
+      <button 
+        @click="expanded = !expanded" 
+        class="bg-gradient-to-br from-sky-500 to-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm font-medium"
+        :class="expanded ? 'rounded-b-none' : ''"
+      >
+        <span>💾</span>
+        <span x-show="!expanded">SQL Monitor</span>
+        <span x-show="expanded">Hide</span>
+      </button>
+      
+      <!-- Monitor Panel -->
+      <div 
+        x-show="expanded" 
+        x-transition
+        class="bg-white rounded-t-2xl shadow-2xl border border-slate-200 w-80 max-h-96 overflow-hidden flex flex-col"
+      >
+        <div class="bg-gradient-to-br from-sky-500 to-blue-600 text-white px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">💾</span>
+            <span class="font-semibold">SQL Queries</span>
+          </div>
+          <button @click="clearHistory()" class="text-white/80 hover:text-white text-xs">Clear</button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50">
+          <template x-for="(entry, index) in history" :key="index">
+            <div class="bg-white rounded-lg p-3 border border-slate-100 text-xs">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600" x-text="entry.method"></span>
+                  <span class="font-medium text-slate-700 truncate" x-text="'@' + entry.api"></span>
+                </div>
+                <span 
+                  class="font-bold px-2 py-0.5 rounded-full text-xs whitespace-nowrap ml-2"
+                  :class="entry.time < 1 ? 'bg-emerald-100 text-emerald-700' : 
+                          entry.time < 5 ? 'bg-blue-100 text-blue-700' : 
+                          entry.time < 10 ? 'bg-amber-100 text-amber-700' : 
+                          'bg-rose-100 text-rose-700'"
+                  x-text="entry.time + 'ms'"
+                ></span>
+              </div>
+              <div class="flex items-center justify-end text-slate-400 text-[10px]">
+                <span x-text="entry.timestamp"></span>
+              </div>
+            </div>
+          </template>
+          
+          <div x-show="history.length === 0" class="text-center py-8 text-slate-400">
+            <p class="text-2xl mb-2">💾</p>
+            <p class="text-sm">No SQL queries yet</p>
+            <p class="text-xs mt-1">Perform add/edit/delete operations</p>
+          </div>
+        </div>
+        
+        <div class="bg-slate-50 px-4 py-3 border-t border-slate-200">
+          <div class="text-xs text-slate-600">
+            <div class="flex justify-between mb-1">
+              <span>Average Time:</span>
+              <span class="font-semibold" x-text="avgTime + 'ms'"></span>
+            </div>
+            <div class="flex justify-between">
+              <span>Total SQL Queries:</span>
+              <span class="font-semibold" x-text="history.length"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Running Time Monitor Component
+      function runningTimeMonitor() {
+        return {
+          expanded: false,
+          history: [],
+          maxHistory: 10,
+          
+          init() {
+            this.interceptFetch();
+          },
+          
+          interceptFetch() {
+            const originalFetch = window.fetch;
+            const self = this;
+            
+            window.fetch = async function(...args) {
+              const startTime = performance.now();
+              const url = args[0];
+              const options = args[1] || {};
+              const method = options.method || 'GET';
+              
+              try {
+                const response = await originalFetch.apply(this, args);
+                const clonedResponse = response.clone();
+                
+                // Try to extract sql_queries from response
+                try {
+                  const data = await clonedResponse.json();
+                  
+                  // If response contains SQL queries, display them
+                  if (data.sql_queries && Array.isArray(data.sql_queries)) {
+                    data.sql_queries.forEach(query => {
+                      self.addEntry(
+                        query.location,           // e.g., "admin_wards.php:38"
+                        query.type,               // e.g., "SELECT", "INSERT"
+                        query.time                // execution time in ms
+                      );
+                    });
+                  }
+                } catch (e) {
+                  // Response is not JSON, skip
+                }
+                
+                return response;
+              } catch (error) {
+                throw error;
+              }
+            };
+          },
+          
+          addEntry(api, method, time) {
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              second: '2-digit' 
+            });
+            
+            this.history.unshift({
+              api: api,
+              method: method,
+              time: Math.round(time * 100) / 100,
+              timestamp: timestamp
+            });
+            
+            // Keep only last N entries
+            if (this.history.length > this.maxHistory) {
+              this.history = this.history.slice(0, this.maxHistory);
+            }
+          },
+          
+          clearHistory() {
+            this.history = [];
+          },
+          
+          get avgTime() {
+            if (this.history.length === 0) return 0;
+            const sum = this.history.reduce((acc, entry) => acc + entry.time, 0);
+            return Math.round((sum / this.history.length) * 100) / 100;
+          }
+        };
+      }
+
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("adminStore", adminStore);
+        Alpine.data("runningTimeMonitor", runningTimeMonitor);
+      });
+
+      function adminStore() {
+        return {
+          // User State
+          user: {
+            displayName: 'Loading...',
+            roleDisplay: 'Hospital Admin',
+            avatar: 'https://i.pravatar.cc/48?img=11'
+          },
+
+          // UI State
+          sidebarOpen: false,
+          currentPage: 'dashboard',
+          modal: { visible: false, mode: "create", type: "", form: {}, subtitle: "" },
+          loading: false,
+
+          // Menu Items
+          menuItems: [
+            { key: "dashboard", label: "Dashboard", badge: "Overview" },
+            { key: "patients", label: "Patient Management", badge: "Core" },
+            { key: "doctors", label: "Doctor Management", badge: "Care" },
+            { key: "nurses", label: "Nurse Management", badge: "Staff" },
+            { key: "departments", label: "Departments", badge: "Resources" },
+            { key: "wards", label: "Wards", badge: "Facilities" },
+            { key: "medicines", label: "Medicine Management", badge: "Pharmacy" },
+            { key: "diseases", label: "Disease Management", badge: "Clinical" },
+            { key: "appointments", label: "Appointments", badge: "Flow" },
+            { key: "records", label: "Records & Prescriptions", badge: "Clinical" },
+          ],
+
+          // Data from database
+          stats: {
+            totalPatients: 0,
+            totalDoctors: 0,
+            totalDepartments: 0,
+            todayAppointments: 0
+          },
+
+          recentAppointments: [],
+
+          // Data arrays from database
+          patients: [],
+          doctors: [],
+          departments: [],
+          wards: [],
+          nurses: [],
+          medicines: [],
+          diseases: [],
+          appointments: [],
+          records: [],
+
+          // Table Configuration
+          tableConfig: {
+            patients: { search: "", page: 1, pageSize: 5, fields: ["person_id", "name"] },
+            doctors: { search: "", page: 1, pageSize: 5, fields: ["doctor_id", "name"] },
+            nurses: { search: "", page: 1, pageSize: 5, fields: ["nurse_id", "name"] },
+            departments: { search: "", page: 1, pageSize: 5, fields: ["department_id", "name"] },
+            wards: { search: "", page: 1, pageSize: 5, fields: ["ward_id", "ward_number"] },
+            medicines: { search: "", page: 1, pageSize: 5, fields: ["medicine_id", "name"] },
+            diseases: { search: "", page: 1, pageSize: 5, fields: ["disease_id", "name"] },
+            appointments: { search: "", page: 1, pageSize: 5, fields: ["appointment_id", "patient_name"] },
+            records: { search: "", page: 1, pageSize: 5, fields: ["record_id", "patient_name"] },
+          },
+
+          // Initialize - Load all data
+          async init() {
+            await this.loadAdminData();
+            await this.loadStats();
+            await this.loadDepartments();
+            await this.loadPatients();
+            await this.loadDoctors();
+            await this.loadNurses();
+            await this.loadWards();
+            await this.loadMedicines();
+            await this.loadDiseases();
+            await this.loadAppointments();
+            await this.loadRecords();
+          },
+
+          // Load admin data
+          async loadAdminData() {
+            try {
+              const response = await fetch('admin_data.php');
+              const result = await response.json();
+              if (result.success) {
+                this.user = result.data;
+              } else if (result.message === 'Unauthorized access') {
+                window.location.href = 'login.html';
+              }
+            } catch (error) {
+              console.error('Error loading admin data:', error);
+            }
+          },
+
+          // Load dashboard stats
+          async loadStats() {
+            try {
+              const response = await fetch('admin_stats.php');
+              const result = await response.json();
+              if (result.success) {
+                this.stats = result.data.stats;
+                this.recentAppointments = result.data.recentAppointments;
+              }
+            } catch (error) {
+              console.error('Error loading stats:', error);
+            }
+          },
+
+          // Load patients
+          async loadPatients() {
+            try {
+              const response = await fetch('admin_patients.php');
+              const result = await response.json();
+              if (result.success) this.patients = result.data;
+            } catch (error) {
+              console.error('Error loading patients:', error);
+            }
+          },
+
+          // Load doctors
+          async loadDoctors() {
+            try {
+              const response = await fetch('admin_doctors.php');
+              const result = await response.json();
+              if (result.success) this.doctors = result.data;
+            } catch (error) {
+              console.error('Error loading doctors:', error);
+            }
+          },
+
+          // Load nurses
+          async loadNurses() {
+            try {
+              const response = await fetch('admin_nurses.php');
+              const result = await response.json();
+              if (result.success) this.nurses = result.data;
+            } catch (error) {
+              console.error('Error loading nurses:', error);
+            }
+          },
+
+          // Load departments
+          async loadDepartments() {
+            try {
+              const response = await fetch('admin_departments.php');
+              const result = await response.json();
+              if (result.success) this.departments = result.data;
+            } catch (error) {
+              console.error('Error loading departments:', error);
+            }
+          },
+
+          // Load wards
+          async loadWards() {
+            try {
+              const response = await fetch('admin_wards.php');
+              const result = await response.json();
+              if (result.success) this.wards = result.data;
+            } catch (error) {
+              console.error('Error loading wards:', error);
+            }
+          },
+
+          // Load medicines
+          async loadMedicines() {
+            try {
+              const response = await fetch('admin_medicines.php');
+              const result = await response.json();
+              if (result.success) this.medicines = result.data;
+            } catch (error) {
+              console.error('Error loading medicines:', error);
+            }
+          },
+
+          // Load diseases
+          async loadDiseases() {
+            try {
+              const response = await fetch('admin_diseases.php');
+              const result = await response.json();
+              if (result.success) this.diseases = result.data;
+            } catch (error) {
+              console.error('Error loading diseases:', error);
+            }
+          },
+
+          // Load appointments
+          async loadAppointments() {
+            try {
+              const response = await fetch('admin_appointments.php');
+              const result = await response.json();
+              if (result.success) this.appointments = result.data;
+            } catch (error) {
+              console.error('Error loading appointments:', error);
+            }
+          },
+
+          // Load medical records
+          async loadRecords() {
+            try {
+              const response = await fetch('admin_records.php');
+              const result = await response.json();
+              if (result.success) this.records = result.data;
+            } catch (error) {
+              console.error('Error loading records:', error);
+            }
+          },
+
+          // Methods
+          setCurrentPage(page) {
+            this.currentPage = page;
+            this.sidebarOpen = false;
+          },
+
+          async logout() {
+            try {
+              await fetch('logout.php');
+            } catch (error) {
+              console.error('Error logging out:', error);
+            }
+            window.location.href = 'login.html';
+          },
+
+          // Table Methods
+          filteredItems(key) {
+            const cfg = this.tableConfig[key];
+            if (!cfg) return [];
+            const term = cfg.search.trim().toLowerCase();
+            if (!term) return this[key] || [];
+            return (this[key] || []).filter((item) =>
+              cfg.fields.some((field) => (item[field] || "").toString().toLowerCase().includes(term))
+            );
+          },
+
+          totalPages(key) {
+            const cfg = this.tableConfig[key];
+            if (!cfg) return 1;
+            return Math.max(1, Math.ceil(this.filteredItems(key).length / cfg.pageSize));
+          },
+
+          pagedItems(key) {
+            const cfg = this.tableConfig[key];
+            if (!cfg) return [];
+            const total = this.totalPages(key);
+            if (cfg.page > total) cfg.page = total;
+            const start = (cfg.page - 1) * cfg.pageSize;
+            return this.filteredItems(key).slice(start, start + cfg.pageSize);
+          },
+
+          changePage(key, step) {
+            const cfg = this.tableConfig[key];
+            if (!cfg) return;
+            const total = this.totalPages(key);
+            cfg.page = Math.min(Math.max(1, cfg.page + step), total);
+          },
+
+          // Modal Methods
+          openModal(type, mode, record = null) {
+            this.modal.mode = mode;
+            this.modal.type = type;
+            this.modal.visible = true;
+            this.modal.form = record ? { ...record } : {};
+          },
+
+          closeModal() {
+            this.modal.visible = false;
+            this.modal.form = {};
+          },
+
+          async confirmDelete(type, id) {
+            if (!confirm(`Are you sure you want to delete this ${type}?`)) {
+              return;
+            }
+            
+            this.loading = true;
+            const apiMap = {
+              'patient': 'admin_patients.php',
+              'doctor': 'admin_doctors.php',
+              'nurse': 'admin_nurses.php',
+              'department': 'admin_departments.php',
+              'ward': 'admin_wards.php',
+              'medicine': 'admin_medicines.php',
+              'disease': 'admin_diseases.php',
+              'appointment': 'admin_appointments.php',
+              'record': 'admin_records.php'
+            };
+            
+            const api = apiMap[type];
+            if (!api) {
+              alert('Invalid entity type');
+              this.loading = false;
+              return;
+            }
+            
+            try {
+              const response = await fetch(api, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+              });
+              
+              const result = await response.json();
+              
+              if (result.success) {
+                alert(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`);
+                // Reload data
+                const loadMethods = {
+                  'patient': this.loadPatients,
+                  'doctor': this.loadDoctors,
+                  'nurse': this.loadNurses,
+                  'department': this.loadDepartments,
+                  'ward': this.loadWards,
+                  'medicine': this.loadMedicines,
+                  'disease': this.loadDiseases,
+                  'appointment': this.loadAppointments,
+                  'record': this.loadRecords
+                };
+                await loadMethods[type].call(this);
+              } else {
+                alert('Failed to delete: ' + result.message);
+              }
+            } catch (error) {
+              console.error('Delete error:', error);
+              alert('Error deleting entity');
+            }
+            
+            this.loading = false;
+          },
+
+          async submitModal() {
+            this.loading = true;
+            const type = this.modal.type;
+            const mode = this.modal.mode;
+            const data = this.modal.form;
+            
+            const apiMap = {
+              'patient': 'admin_patients.php',
+              'doctor': 'admin_doctors.php',
+              'nurse': 'admin_nurses.php',
+              'department': 'admin_departments.php',
+              'ward': 'admin_wards.php',
+              'medicine': 'admin_medicines.php',
+              'disease': 'admin_diseases.php',
+              'appointment': 'admin_appointments.php',
+              'record': 'admin_records.php'
+            };
+            
+            const api = apiMap[type];
+            const method = mode === 'create' ? 'POST' : 'PUT';
+            
+            try {
+              const response = await fetch(api, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
+              
+              const result = await response.json();
+              
+              if (result.success) {
+                alert(`${type.charAt(0).toUpperCase() + type.slice(1)} ${mode === 'create' ? 'created' : 'updated'} successfully!`);
+                this.closeModal();
+                
+                // Reload data
+                const loadMethods = {
+                  'patient': this.loadPatients,
+                  'doctor': this.loadDoctors,
+                  'nurse': this.loadNurses,
+                  'department': this.loadDepartments,
+                  'ward': this.loadWards,
+                  'medicine': this.loadMedicines,
+                  'disease': this.loadDiseases,
+                  'appointment': this.loadAppointments,
+                  'record': this.loadRecords
+                };
+                await loadMethods[type].call(this);
+              } else {
+                alert('Failed to save: ' + result.message);
+              }
+            } catch (error) {
+              console.error('Submit error:', error);
+              alert('Error saving entity');
+            }
+            
+            this.loading = false;
+          },
+
+          // Get today's date in YYYY-MM-DD format
+          getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          },
+
+          get modalTitle() {
+            const titles = {
+              patient: { create: "Add Patient", edit: "Edit Patient", view: "Patient Details" },
+              doctor: { create: "Add Doctor", edit: "Edit Doctor", view: "Doctor Details" },
+              nurse: { create: "Add Nurse", edit: "Edit Nurse", view: "Nurse Details" },
+              department: { create: "Add Department", edit: "Edit Department", view: "Department Details" },
+              ward: { create: "Add Ward", edit: "Edit Ward", view: "Ward Details" },
+              medicine: { create: "Add Medicine", edit: "Edit Medicine", view: "Medicine Details" },
+              disease: { create: "Add Disease", edit: "Edit Disease", view: "Disease Details" },
+              appointment: { create: "Schedule Appointment", edit: "Edit Appointment", view: "Appointment Details" },
+              record: { create: "Create Medical Record", edit: "Edit Medical Record", view: "Medical Record Details" },
+            };
+            return titles[this.modal.type]?.[this.modal.mode] || "Details";
+          },
+        };
+      }
+    </script>
+  </body>
+</html>
