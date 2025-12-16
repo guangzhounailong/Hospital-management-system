@@ -23,10 +23,20 @@ if(!$doctor_result || mysqli_num_rows($doctor_result) == 0){
 
 $doctor_id = mysqli_fetch_assoc($doctor_result)['doctor_id'];
 
-// Get date parameter (default to today)
-$date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
+// Get date parameter (optional filter)
+$date_filter = isset($_GET['date']) ? $_GET['date'] : null;
 
-// Get appointments for this doctor on specified date
+// Build the SQL query based on filter
+if($date_filter){
+    // If specific date is provided, get appointments for that date
+    $date_condition = "AND a.appointment_date = '$date_filter'";
+} else {
+    // Otherwise, get all appointments from today onwards
+    $today = date('Y-m-d');
+    $date_condition = "AND a.appointment_date >= '$today'";
+}
+
+// Get appointments for this doctor
 $sql = "SELECT 
             a.appointment_id,
             a.patient_id,
@@ -40,9 +50,9 @@ $sql = "SELECT
         JOIN patient AS pat ON a.patient_id = pat.patient_id
         JOIN person AS p ON pat.person_id = p.person_id
         WHERE a.doctor_id = '$doctor_id' 
-        AND a.appointment_date = '$date'
+        $date_condition
         AND a.status != 'Cancelled'
-        ORDER BY a.time ASC";
+        ORDER BY a.appointment_date ASC, a.time ASC";
 
 $result = executeTrackedQuery($conn, $sql);
 

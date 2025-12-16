@@ -38,6 +38,22 @@ $diagnosis = $data['diagnosis'];
 $treatment_plan = $data['treatment_plan'];
 $vital_signs = isset($data['vital_signs']) ? $data['vital_signs'] : '';
 
+// Verify that the patient has at least one appointment with this doctor
+$verify_appointment_sql = "SELECT COUNT(*) AS appointment_count 
+                           FROM appointment 
+                           WHERE patient_id = '$patient_id' 
+                           AND doctor_id = '$doctor_id'";
+$verify_result = executeTrackedQuery($conn, $verify_appointment_sql);
+$verify_row = mysqli_fetch_assoc($verify_result);
+
+if($verify_row['appointment_count'] == 0){
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Cannot create medical record: Patient has no appointment with you. Only patients with appointments can have medical records created.'
+    ]);
+    exit();
+}
+
 // Start transaction
 mysqli_begin_transaction($conn);
 

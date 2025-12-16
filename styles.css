@@ -28,6 +28,27 @@ body {
   border-radius: 999px;
 }
 
+/* Search dropdown styles */
+.search-dropdown-item {
+  transition: background-color 0.15s ease;
+}
+
+.search-dropdown-item:hover {
+  background-color: rgba(14, 165, 233, 0.1);
+}
+
+/* Smooth transitions for dropdowns */
+.dropdown-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.dropdown-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
 body {
   font-family: "Segoe UI", "Roboto", system-ui, -apple-system, BlinkMacSystemFont;
   background-color: rgb(248 250 252);
@@ -57,5 +78,26 @@ body {
 .scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(15, 118, 110, 0.3);
   border-radius: 999px;
+}
+
+/* Search dropdown styles */
+.search-dropdown-item {
+  transition: background-color 0.15s ease;
+}
+
+.search-dropdown-item:hover {
+  background-color: rgba(14, 165, 233, 0.1);
+}
+
+/* Smooth transitions for dropdowns */
+.dropdown-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.dropdown-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 

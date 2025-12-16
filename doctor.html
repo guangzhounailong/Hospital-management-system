@@ -74,11 +74,11 @@
           </div>
           <div class="p-4">
             <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
-              <p class="text-sm font-semibold text-slate-800 mb-2">Today's Schedule</p>
+              <p class="text-sm font-semibold text-slate-800 mb-2">Appointment Summary</p>
               <ul class="text-xs text-slate-600 space-y-1">
-                <li>Appointments: <span x-text="todaysAppointments.length"></span></li>
-                <li>Completed: <span x-text="todaysAppointments.filter(a => a.status === 'Completed').length"></span></li>
-                <li>Scheduled: <span x-text="todaysAppointments.filter(a => a.status === 'Scheduled').length"></span></li>
+                <li>Today: <span x-text="todaysAppointments.length"></span></li>
+                <li>Upcoming: <span x-text="allAppointments.length"></span></li>
+                <li>Scheduled: <span x-text="allAppointments.filter(a => a.status === 'Scheduled').length"></span></li>
               </ul>
             </div>
           </div>
@@ -201,60 +201,119 @@
             </div>
           </div>
 
-          <!-- Today's Appointments -->
+          <!-- Upcoming Appointments -->
           <div x-show="currentPage === 'today-appointments'" class="p-4 lg:p-8 space-y-8">
             <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
               <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <p class="text-xs uppercase text-slate-400">Today's Schedule</p>
-                  <h1 class="text-2xl font-semibold text-slate-800">Today's Appointments</h1>
-                  <p class="text-sm text-slate-500">Your patient appointments for today</p>
+                  <p class="text-xs uppercase text-slate-400">Appointment Schedule</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">Upcoming Appointments</h1>
+                  <p class="text-sm text-slate-500">View and manage your patient appointments</p>
                 </div>
-                <div class="text-right">
-                  <p class="text-sm text-slate-500">Date: <span class="font-medium" x-text="todayDate"></span></p>
+                <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-2">
+                    <label class="text-sm font-medium text-slate-700">Filter by Date:</label>
+                    <input 
+                      type="date" 
+                      class="input text-sm px-3 py-2" 
+                      x-model="appointmentDateFilter"
+                      @change="loadAppointmentsByDate()"
+                      :min="getTodayDate()"
+                    />
+                    <button 
+                      @click="clearDateFilter()" 
+                      class="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg"
+                      x-show="appointmentDateFilter"
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div class="space-y-4">
-                <template x-for="appointment in todaysAppointments" :key="appointment.appointment_id">
-                  <div class="border border-slate-100 rounded-2xl p-6 hover:shadow-md transition-shadow">
-                    <div class="flex items-center justify-between mb-4">
-                      <div class="flex items-center gap-4">
-                        <img :src="appointment.patientAvatar" class="w-12 h-12 rounded-full" />
-                        <div>
-                          <p class="font-semibold text-slate-800" x-text="appointment.patientName"></p>
-                          <p class="text-sm text-slate-500" x-text="'Patient ID: ' + appointment.patient_id"></p>
-                        </div>
+              <!-- Statistics Summary -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-sky-50 rounded-xl p-4 border border-sky-100">
+                  <p class="text-xs text-sky-600 font-medium">Total Appointments</p>
+                  <p class="text-2xl font-bold text-sky-700" x-text="allAppointments.length"></p>
+                </div>
+                <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+                  <p class="text-xs text-emerald-600 font-medium">Scheduled</p>
+                  <p class="text-2xl font-bold text-emerald-700" x-text="allAppointments.filter(a => a.status === 'Scheduled').length"></p>
+                </div>
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                  <p class="text-xs text-blue-600 font-medium">Completed</p>
+                  <p class="text-2xl font-bold text-blue-700" x-text="allAppointments.filter(a => a.status === 'Completed').length"></p>
+                </div>
+                <div class="bg-amber-50 rounded-xl p-4 border border-amber-100">
+                  <p class="text-xs text-amber-600 font-medium">Today's Appointments</p>
+                  <p class="text-2xl font-bold text-amber-700" x-text="todaysAppointments.length"></p>
+                </div>
+              </div>
+
+              <!-- Appointments grouped by date -->
+              <div class="space-y-6">
+                <template x-for="dateGroup in groupedAppointments" :key="dateGroup.date">
+                  <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                      <div class="flex-1 h-px bg-slate-200"></div>
+                      <div class="px-4 py-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-full text-sm font-medium">
+                        <span x-text="formatDate(dateGroup.date)"></span>
+                        <span class="ml-2 bg-white/20 px-2 py-0.5 rounded-full" x-text="dateGroup.appointments.length + ' appointments'"></span>
                       </div>
-                      <div class="text-right">
-                        <p class="font-medium text-slate-800" x-text="appointment.time"></p>
-                        <span class="px-3 py-1 rounded-full text-xs font-medium"
-                              :class="appointment.status === 'Scheduled' ? 'bg-emerald-100 text-emerald-700' : appointment.status === 'Completed' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'"
-                              x-text="appointment.status"></span>
-                      </div>
+                      <div class="flex-1 h-px bg-slate-200"></div>
                     </div>
-                    <div class="flex items-center justify-between">
-                      <div class="text-sm text-slate-600">
-                        <p>Symptoms: <span x-text="appointment.symptoms"></span></p>
-                      </div>
-                      <div class="flex gap-3">
-                        <button @click="viewPatientRecord(appointment.patient_id)" class="px-4 py-2 bg-sky-100 text-sky-700 rounded-full text-sm font-medium hover:bg-sky-200">
-                          View Records
-                        </button>
-                        <button @click="createMedicalRecord(appointment)" class="px-4 py-2 bg-emerald-600 text-white rounded-full text-sm font-medium hover:bg-emerald-700">
-                          Write Record
-                        </button>
-                      </div>
+
+                    <div class="space-y-3">
+                      <template x-for="appointment in dateGroup.appointments" :key="appointment.appointment_id">
+                        <div class="border border-slate-100 rounded-2xl p-6 hover:shadow-md transition-shadow">
+                          <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-4">
+                              <img :src="appointment.patientAvatar" class="w-12 h-12 rounded-full" />
+                              <div>
+                                <p class="font-semibold text-slate-800" x-text="appointment.patientName"></p>
+                                <p class="text-sm text-slate-500" x-text="'Patient ID: ' + appointment.patient_id"></p>
+                              </div>
+                            </div>
+                            <div class="text-right">
+                              <p class="font-medium text-slate-800" x-text="appointment.time"></p>
+                              <span class="px-3 py-1 rounded-full text-xs font-medium"
+                                    :class="appointment.status === 'Scheduled' ? 'bg-emerald-100 text-emerald-700' : appointment.status === 'Completed' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'"
+                                    x-text="appointment.status"></span>
+                            </div>
+                          </div>
+                          <div class="flex items-center justify-between">
+                            <div class="text-sm text-slate-600">
+                              <p>Symptoms: <span x-text="appointment.symptoms || 'No symptoms recorded'"></span></p>
+                            </div>
+                            <div class="flex gap-3">
+                              <button @click="viewPatientRecord(appointment.patient_id)" class="px-4 py-2 bg-sky-100 text-sky-700 rounded-full text-sm font-medium hover:bg-sky-200">
+                                View Records
+                              </button>
+                              <button 
+                                @click="createMedicalRecord(appointment)" 
+                                class="px-4 py-2 bg-emerald-600 text-white rounded-full text-sm font-medium hover:bg-emerald-700"
+                                :disabled="appointment.status === 'Completed'"
+                                :class="appointment.status === 'Completed' ? 'opacity-50 cursor-not-allowed' : ''"
+                              >
+                                <span x-show="appointment.status !== 'Completed'">Write Record</span>
+                                <span x-show="appointment.status === 'Completed'">Completed</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
                     </div>
                   </div>
                 </template>
               </div>
 
-              <div x-show="todaysAppointments.length === 0" class="text-center py-12">
+              <div x-show="allAppointments.length === 0" class="text-center py-12">
                 <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                   <span class="text-2xl">📅</span>
                 </div>
-                <p class="text-slate-600">No appointments scheduled for today</p>
+                <p class="text-slate-600">No upcoming appointments found</p>
+                <p class="text-sm text-slate-500 mt-2">All future appointments will appear here</p>
               </div>
             </section>
           </div>
@@ -268,17 +327,62 @@
                 <p class="text-sm text-slate-500">Write diagnosis and prescribe medication</p>
               </div>
 
+              <!-- Information Notice -->
+              <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+                <div class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">i</div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-blue-900">Appointment Required</p>
+                  <p class="text-xs text-blue-700 mt-1">You can only create medical records for patients who have booked appointments with you. The patient list below only shows patients with existing appointments.</p>
+                </div>
+              </div>
+
               <form class="grid md:grid-cols-2 gap-6">
                 <!-- TODO: GET /api/appointments?doctor_id={doctor_id}&date={date} 获取医生某天预约列表 -->
                 <!-- TODO: GET /api/persons/{person_id} 获取患者基本信息 -->
-                <label class="flex flex-col gap-2">
-                  <span class="font-medium text-slate-700">Patient</span>
-                  <select class="input" x-model="recordForm.patientId">
-                    <option value="">Select Patient</option>
-                    <template x-for="patient in patients" :key="patient.person_id">
-                      <option :value="patient.person_id" x-text="patient.name + ' (' + patient.person_id + ')'"></option>
+                <label class="flex flex-col gap-2 relative" x-data="{ showPatientDropdown: false }">
+                  <span class="font-medium text-slate-700">Patient <span class="text-xs text-slate-500">(Only patients with appointments)</span></span>
+                  <input 
+                    type="text" 
+                    class="input" 
+                    x-model="patientSearch"
+                    @focus="showPatientDropdown = true"
+                    @click.away="showPatientDropdown = false"
+                    placeholder="Search patient by name or ID..."
+                    autocomplete="off"
+                  />
+                  <!-- Dropdown for filtered patients -->
+                  <div 
+                    x-show="showPatientDropdown && filteredPatients.length > 0"
+                    class="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto z-10"
+                  >
+                    <template x-for="patient in filteredPatients" :key="patient.person_id">
+                      <div 
+                        @click="selectPatient(patient); showPatientDropdown = false"
+                        class="px-4 py-2 hover:bg-sky-50 cursor-pointer border-b border-slate-100 last:border-b-0"
+                      >
+                        <p class="font-medium text-slate-800" x-text="patient.name"></p>
+                        <p class="text-xs text-slate-500" x-text="'ID: ' + patient.person_id + ' • Phone: ' + patient.phone"></p>
+                      </div>
                     </template>
-                  </select>
+                  </div>
+                  <!-- Empty state when no patients with appointments -->
+                  <div 
+                    x-show="showPatientDropdown && filteredPatients.length === 0 && patients.length === 0"
+                    class="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg mt-1 p-4 z-10"
+                  >
+                    <div class="text-center text-slate-500">
+                      <p class="text-sm font-medium">No patients with appointments</p>
+                      <p class="text-xs mt-1">Only patients who have booked appointments can be selected</p>
+                    </div>
+                  </div>
+                  <!-- Selected patient display -->
+                  <div x-show="recordForm.patientId" class="mt-2 px-3 py-2 bg-sky-50 rounded-lg border border-sky-200">
+                    <p class="text-sm text-sky-700">
+                      <span class="font-medium">Selected:</span> 
+                      <span x-text="getPatientName(recordForm.patientId)"></span>
+                      <button type="button" @click="clearPatient()" class="ml-2 text-sky-600 hover:text-sky-800">✕</button>
+                    </p>
+                  </div>
                 </label>
 
                 <label class="flex flex-col gap-2">
@@ -291,14 +395,40 @@
                   <textarea class="input" rows="3" x-model="recordForm.symptom" placeholder="Patient's main complaint..."></textarea>
                 </label>
 
-                <label class="flex flex-col gap-2">
+                <label class="flex flex-col gap-2 relative" x-data="{ showDiagnosisDropdown: false }">
                   <span class="font-medium text-slate-700">Diagnosis</span>
-                  <select class="input" x-model="recordForm.diagnosisId">
-                    <option value="">Select Diagnosis</option>
-                    <template x-for="disease in diseases" :key="disease.disease_id">
-                      <option :value="disease.disease_id" x-text="disease.name"></option>
+                  <input 
+                    type="text" 
+                    class="input" 
+                    x-model="diagnosisSearch"
+                    @focus="showDiagnosisDropdown = true"
+                    @click.away="showDiagnosisDropdown = false"
+                    placeholder="Search diagnosis by name or category..."
+                    autocomplete="off"
+                  />
+                  <!-- Dropdown for filtered diagnoses -->
+                  <div 
+                    x-show="showDiagnosisDropdown && filteredDiagnoses.length > 0"
+                    class="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto z-10"
+                  >
+                    <template x-for="disease in filteredDiagnoses" :key="disease.disease_id">
+                      <div 
+                        @click="selectDiagnosis(disease); showDiagnosisDropdown = false"
+                        class="px-4 py-2 hover:bg-emerald-50 cursor-pointer border-b border-slate-100 last:border-b-0"
+                      >
+                        <p class="font-medium text-slate-800" x-text="disease.name"></p>
+                        <p class="text-xs text-slate-500" x-text="'Category: ' + disease.category"></p>
+                      </div>
                     </template>
-                  </select>
+                  </div>
+                  <!-- Selected diagnosis display -->
+                  <div x-show="recordForm.diagnosisId" class="mt-2 px-3 py-2 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <p class="text-sm text-emerald-700">
+                      <span class="font-medium">Selected:</span> 
+                      <span x-text="getDiagnosisName(recordForm.diagnosisId)"></span>
+                      <button type="button" @click="clearDiagnosis()" class="ml-2 text-emerald-600 hover:text-emerald-800">✕</button>
+                    </p>
+                  </div>
                 </label>
 
                 <label class="flex flex-col gap-2">
@@ -318,12 +448,36 @@
 
                 <div class="space-y-4">
                   <div class="grid md:grid-cols-4 gap-4">
-                    <select class="input" x-model="newPrescription.medicineId">
-                      <option value="">Select Medicine</option>
-                      <template x-for="medicine in medicines" :key="medicine.medicine_id">
-                        <option :value="medicine.medicine_id" x-text="medicine.name"></option>
-                      </template>
-                    </select>
+                    <div class="relative" x-data="{ showMedicineDropdown: false }">
+                      <input 
+                        type="text" 
+                        class="input" 
+                        x-model="medicineSearch"
+                        @focus="showMedicineDropdown = true"
+                        @click.away="showMedicineDropdown = false"
+                        placeholder="Search medicine..."
+                        autocomplete="off"
+                      />
+                      <!-- Dropdown for filtered medicines -->
+                      <div 
+                        x-show="showMedicineDropdown && filteredMedicines.length > 0"
+                        class="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto z-10"
+                      >
+                        <template x-for="medicine in filteredMedicines" :key="medicine.medicine_id">
+                          <div 
+                            @click="selectMedicine(medicine); showMedicineDropdown = false"
+                            class="px-3 py-2 hover:bg-purple-50 cursor-pointer border-b border-slate-100 last:border-b-0"
+                          >
+                            <p class="font-medium text-slate-800 text-sm" x-text="medicine.name"></p>
+                            <p class="text-xs text-slate-500" x-text="medicine.manufacturer + ' • $' + medicine.price"></p>
+                          </div>
+                        </template>
+                      </div>
+                      <!-- Selected medicine indicator -->
+                      <div x-show="newPrescription.medicineId" class="absolute -bottom-6 left-0 text-xs text-purple-600">
+                        <span x-text="'✓ ' + getMedicineName(newPrescription.medicineId)"></span>
+                      </div>
+                    </div>
                     <input type="text" class="input" placeholder="Dosage (e.g., 500mg)" x-model="newPrescription.dosage" />
                     <input type="text" class="input" placeholder="Instructions" x-model="newPrescription.instructions" />
                     <button @click="addPrescriptionItem" class="bg-sky-600 text-white px-4 py-2 rounded-full hover:bg-sky-700">
@@ -358,20 +512,221 @@
           <!-- Patient Records (placeholder for future implementation) -->
           <div x-show="currentPage === 'patient-records'" class="p-4 lg:p-8 space-y-8">
             <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
-              <div>
-                <p class="text-xs uppercase text-slate-400">Patient Records</p>
-                <h1 class="text-2xl font-semibold text-slate-800">My Patient Records</h1>
-                <p class="text-sm text-slate-500">View and manage patient medical histories</p>
+              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase text-slate-400">Patient Records</p>
+                  <h1 class="text-2xl font-semibold text-slate-800">My Patient Records</h1>
+                  <p class="text-sm text-slate-500">All medical records you have created</p>
+                </div>
+                <div class="bg-sky-50 px-4 py-3 rounded-xl">
+                  <p class="text-xs text-sky-600">Total Records</p>
+                  <p class="text-2xl font-bold text-sky-700" x-text="allPatientRecords.length"></p>
+                </div>
               </div>
 
-              <div class="text-center py-12">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-                  <span class="text-2xl">📋</span>
-                </div>
-                <p class="text-slate-600">Patient records feature coming soon</p>
-                <p class="text-sm text-slate-500 mt-2">This will show all your patients' medical histories</p>
+              <!-- Search Bar -->
+              <div class="relative">
+                <input 
+                  type="text" 
+                  class="w-full px-4 py-3 pl-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent" 
+                  placeholder="Search by patient name, diagnosis, record ID, or phone..."
+                  x-model="recordsSearch"
+                />
+                <svg class="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+
+              <!-- Records List -->
+              <div class="space-y-4">
+                <template x-if="filteredRecords.length === 0">
+                  <div class="text-center py-12">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+                      <span class="text-2xl">📋</span>
+                    </div>
+                    <p class="text-slate-600" x-text="recordsSearch ? 'No records found' : 'No patient records yet'"></p>
+                    <p class="text-sm text-slate-500 mt-2" x-text="recordsSearch ? 'Try a different search term' : 'Create your first medical record'"></p>
+                  </div>
+                </template>
+
+                <template x-for="record in filteredRecords" :key="record.record_id">
+                  <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:border-sky-300 transition-all cursor-pointer" @click="viewRecordDetails(record)">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      <!-- Patient Info -->
+                      <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 text-white flex items-center justify-center font-semibold">
+                            <span x-text="record.patient_name.charAt(0).toUpperCase()"></span>
+                          </div>
+                          <div>
+                            <h3 class="font-semibold text-slate-800" x-text="record.patient_name"></h3>
+                            <div class="flex items-center gap-4 text-xs text-slate-500">
+                              <span x-text="record.gender + ', ' + record.age + ' years'"></span>
+                              <span x-text="'Blood: ' + record.blood_type"></span>
+                              <span x-show="record.phone" x-text="record.phone"></span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="ml-13 space-y-1">
+                          <div class="flex items-center gap-2">
+                            <span class="text-xs font-medium text-slate-600">Diagnosis:</span>
+                            <span class="text-sm text-slate-800" x-text="record.diagnosis"></span>
+                          </div>
+                          <div class="flex items-center gap-2" x-show="record.vital_signs">
+                            <span class="text-xs font-medium text-slate-600">Vital Signs:</span>
+                            <span class="text-sm text-slate-700" x-text="record.vital_signs"></span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Record Info -->
+                      <div class="lg:text-right space-y-2">
+                        <div class="flex lg:justify-end items-center gap-2">
+                          <span class="text-xs px-2 py-1 rounded-full bg-sky-100 text-sky-700" x-text="'ID: ' + record.record_id"></span>
+                          <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700" x-show="record.prescription_count > 0" x-text="record.prescription_count + ' Rx'"></span>
+                        </div>
+                        <p class="text-sm font-medium text-slate-700" x-text="new Date(record.record_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })"></p>
+                      </div>
+                    </div>
+                  </div>
+                </template>
               </div>
             </section>
+          </div>
+
+          <!-- Record Details Modal -->
+          <div 
+            x-show="selectedRecord" 
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+            @click="closeRecordDetails()"
+          >
+            <div 
+              class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto scrollbar"
+              @click.stop
+              x-show="selectedRecord"
+              x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 scale-95"
+              x-transition:enter-end="opacity-100 scale-100"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 scale-100"
+              x-transition:leave-end="opacity-0 scale-95"
+            >
+              <template x-if="selectedRecord">
+                <div>
+                  <!-- Modal Header -->
+                  <div class="sticky top-0 bg-gradient-to-br from-sky-500 to-blue-600 text-white p-6 rounded-t-3xl">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <h2 class="text-2xl font-bold" x-text="'Medical Record #' + selectedRecord.record_id"></h2>
+                        <p class="text-sky-100 text-sm" x-text="new Date(selectedRecord.record_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></p>
+                      </div>
+                      <button @click="closeRecordDetails()" class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+                        <span class="text-2xl">&times;</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Modal Body -->
+                  <div class="p-6 space-y-6">
+                    <!-- Patient Information -->
+                    <div class="bg-slate-50 rounded-xl p-4">
+                      <h3 class="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <span>👤</span>
+                        <span>Patient Information</span>
+                      </h3>
+                      <div class="grid md:grid-cols-2 gap-3 text-sm">
+                        <div class="flex justify-between">
+                          <span class="text-slate-600">Name:</span>
+                          <span class="font-medium text-slate-800" x-text="selectedRecord.patient_name"></span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-slate-600">Patient ID:</span>
+                          <span class="font-medium text-slate-800" x-text="selectedRecord.patient_id"></span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-slate-600">Gender:</span>
+                          <span class="font-medium text-slate-800" x-text="selectedRecord.gender"></span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-slate-600">Age:</span>
+                          <span class="font-medium text-slate-800" x-text="selectedRecord.age + ' years'"></span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-slate-600">Blood Type:</span>
+                          <span class="font-medium text-slate-800" x-text="selectedRecord.blood_type"></span>
+                        </div>
+                        <div class="flex justify-between" x-show="selectedRecord.phone">
+                          <span class="text-slate-600">Phone:</span>
+                          <span class="font-medium text-slate-800" x-text="selectedRecord.phone"></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Medical Information -->
+                    <div class="space-y-4">
+                      <!-- Diagnosis -->
+                      <div class="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                        <h4 class="text-sm font-semibold text-amber-800 mb-2">Diagnosis</h4>
+                        <p class="text-slate-800" x-text="selectedRecord.diagnosis"></p>
+                      </div>
+
+                      <!-- Vital Signs -->
+                      <div class="bg-blue-50 border border-blue-100 rounded-xl p-4" x-show="selectedRecord.vital_signs">
+                        <h4 class="text-sm font-semibold text-blue-800 mb-2">Vital Signs / Symptoms</h4>
+                        <p class="text-slate-800" x-text="selectedRecord.vital_signs"></p>
+                      </div>
+
+                      <!-- Treatment Plan -->
+                      <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                        <h4 class="text-sm font-semibold text-emerald-800 mb-2">Treatment Plan</h4>
+                        <p class="text-slate-800 whitespace-pre-wrap" x-text="selectedRecord.treatment_plan"></p>
+                      </div>
+                    </div>
+
+                    <!-- Prescriptions -->
+                    <div x-show="selectedRecord.prescriptions && selectedRecord.prescriptions.length > 0">
+                      <h3 class="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <span>💊</span>
+                        <span>Prescriptions</span>
+                        <span class="text-sm font-normal text-slate-500" x-text="'(' + selectedRecord.prescriptions.length + ')'"></span>
+                      </h3>
+                      <div class="space-y-3">
+                        <template x-for="(prescription, index) in selectedRecord.prescriptions" :key="index">
+                          <div class="bg-purple-50 border border-purple-100 rounded-xl p-4">
+                            <div class="flex items-start justify-between gap-4">
+                              <div class="flex-1">
+                                <h5 class="font-semibold text-slate-800 mb-1" x-text="prescription.medicine_name"></h5>
+                                <div class="text-sm text-slate-600 space-y-1">
+                                  <p><span class="font-medium">Type:</span> <span x-text="prescription.medicine_type"></span> | <span class="font-medium">Form:</span> <span x-text="prescription.medicine_form"></span></p>
+                                  <p><span class="font-medium">Dosage:</span> <span x-text="prescription.dosage"></span></p>
+                                  <p x-show="prescription.usage_statement"><span class="font-medium">Instructions:</span> <span x-text="prescription.usage_statement"></span></p>
+                                </div>
+                              </div>
+                              <div class="text-right">
+                                <span class="text-xs px-2 py-1 rounded-full bg-purple-200 text-purple-800" x-text="prescription.validity_period + ' days'"></span>
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Modal Footer -->
+                  <div class="sticky bottom-0 bg-slate-50 p-4 rounded-b-3xl border-t border-slate-200 flex justify-end">
+                    <button @click="closeRecordDetails()" class="px-6 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors">
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </div>
           </div>
 
           <!-- Profile -->
@@ -629,7 +984,7 @@
           // Menu Items
           menuItems: [
             { key: "dashboard", label: "Dashboard", badge: "Overview" },
-            { key: "today-appointments", label: "Today's Appointments", badge: "Schedule" },
+            { key: "today-appointments", label: "Upcoming Appointments", badge: "Schedule" },
             { key: "create-record", label: "Create Medical Record", badge: "Clinical" },
             { key: "patient-records", label: "My Patient Records", badge: "History" },
             { key: "profile", label: "Personal Center", badge: "Account" },
@@ -639,16 +994,27 @@
           patients: [],
           diseases: [],
           medicines: [],
-          todaysAppointments: [],
+          allAppointments: [],        // All upcoming appointments
+          todaysAppointments: [],     // Today's appointments only
           prescriptionItems: [],
+          allPatientRecords: [],      // All medical records created by this doctor
+          selectedRecord: null,       // Selected record for detailed view
+
+          // Search filters
+          patientSearch: '',
+          diagnosisSearch: '',
+          medicineSearch: '',
+          appointmentDateFilter: '',  // Date filter for appointments
+          recordsSearch: '',          // Search filter for patient records
 
           // Initialize - Load all data
           async init() {
             await this.loadDoctorData();
-            await this.loadTodaysAppointments();
+            await this.loadAllAppointments();  // Load all upcoming appointments
             await this.loadPatients();
             await this.loadDiseases();
             await this.loadMedicines();
+            await this.loadAllPatientRecords(); // Load all patient records
           },
 
           // Load doctor data
@@ -667,19 +1033,46 @@
             }
           },
 
-          // Load today's appointments
-          async loadTodaysAppointments() {
+          // Load all upcoming appointments (today and future)
+          async loadAllAppointments() {
             try {
-              const today = new Date().toISOString().split('T')[0];
-              const response = await fetch(`doctor_appointments.php?date=${today}`);
+              const response = await fetch('doctor_appointments.php');
               const result = await response.json();
               
               if (result.success) {
-                this.todaysAppointments = result.data;
+                this.allAppointments = result.data;
+                // Filter today's appointments
+                const today = new Date().toISOString().split('T')[0];
+                this.todaysAppointments = this.allAppointments.filter(apt => apt.appointment_date === today);
               }
             } catch (error) {
               console.error('Error loading appointments:', error);
             }
+          },
+
+          // Load appointments by specific date
+          async loadAppointmentsByDate() {
+            if (!this.appointmentDateFilter) {
+              await this.loadAllAppointments();
+              return;
+            }
+            
+            try {
+              const response = await fetch(`doctor_appointments.php?date=${this.appointmentDateFilter}`);
+              const result = await response.json();
+              
+              if (result.success) {
+                this.allAppointments = result.data;
+              }
+            } catch (error) {
+              console.error('Error loading appointments:', error);
+            }
+          },
+
+          // Clear date filter
+          clearDateFilter() {
+            this.appointmentDateFilter = '';
+            this.loadAllAppointments();
           },
 
           // Load all patients
@@ -699,11 +1092,13 @@
           // Load diseases
           async loadDiseases() {
             try {
-              const response = await fetch('admin_diseases.php');
+              const response = await fetch('get_diseases.php');
               const result = await response.json();
               
               if (result.success) {
                 this.diseases = result.data;
+              } else {
+                console.error('Failed to load diseases:', result.message);
               }
             } catch (error) {
               console.error('Error loading diseases:', error);
@@ -713,14 +1108,32 @@
           // Load medicines
           async loadMedicines() {
             try {
-              const response = await fetch('admin_medicines.php');
+              const response = await fetch('get_medicines.php');
               const result = await response.json();
               
               if (result.success) {
                 this.medicines = result.data;
+              } else {
+                console.error('Failed to load medicines:', result.message);
               }
             } catch (error) {
               console.error('Error loading medicines:', error);
+            }
+          },
+
+          // Load all patient records created by this doctor
+          async loadAllPatientRecords() {
+            try {
+              const response = await fetch('doctor_all_records.php');
+              const result = await response.json();
+              
+              if (result.success) {
+                this.allPatientRecords = result.data;
+              } else {
+                console.error('Failed to load patient records:', result.message);
+              }
+            } catch (error) {
+              console.error('Error loading patient records:', error);
             }
           },
 
@@ -743,6 +1156,94 @@
           // Computed Properties
           get todayDate() {
             return new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          },
+
+          // Group appointments by date
+          get groupedAppointments() {
+            const grouped = {};
+            
+            this.allAppointments.forEach(appointment => {
+              const date = appointment.appointment_date;
+              if (!grouped[date]) {
+                grouped[date] = [];
+              }
+              grouped[date].push(appointment);
+            });
+            
+            // Convert to array and sort by date
+            return Object.keys(grouped)
+              .sort()
+              .map(date => ({
+                date: date,
+                appointments: grouped[date]
+              }));
+          },
+
+          // Format date for display
+          formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const targetDate = new Date(dateStr + 'T00:00:00');
+            targetDate.setHours(0, 0, 0, 0);
+            
+            if (targetDate.getTime() === today.getTime()) {
+              return 'Today - ' + date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            } else if (targetDate.getTime() === tomorrow.getTime()) {
+              return 'Tomorrow - ' + date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            } else {
+              return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            }
+          },
+
+          // Get today's date in YYYY-MM-DD format
+          getTodayDate() {
+            return new Date().toISOString().split('T')[0];
+          },
+
+          // Filtered lists for search
+          get filteredPatients() {
+            if (!this.patientSearch) return this.patients;
+            const search = this.patientSearch.toLowerCase();
+            return this.patients.filter(patient => 
+              patient.name.toLowerCase().includes(search) ||
+              patient.person_id.toString().includes(search) ||
+              (patient.phone && patient.phone.includes(search))
+            );
+          },
+
+          get filteredDiagnoses() {
+            if (!this.diagnosisSearch) return this.diseases;
+            const search = this.diagnosisSearch.toLowerCase();
+            return this.diseases.filter(disease => 
+              disease.name.toLowerCase().includes(search) ||
+              (disease.category && disease.category.toLowerCase().includes(search))
+            );
+          },
+
+          get filteredMedicines() {
+            if (!this.medicineSearch) return this.medicines;
+            const search = this.medicineSearch.toLowerCase();
+            return this.medicines.filter(medicine => 
+              medicine.name.toLowerCase().includes(search) ||
+              (medicine.manufacturer && medicine.manufacturer.toLowerCase().includes(search)) ||
+              (medicine.type && medicine.type.toLowerCase().includes(search))
+            );
+          },
+
+          // Filter patient records by search term
+          get filteredRecords() {
+            if (!this.recordsSearch) return this.allPatientRecords;
+            const search = this.recordsSearch.toLowerCase();
+            return this.allPatientRecords.filter(record => 
+              record.patient_name.toLowerCase().includes(search) ||
+              record.diagnosis.toLowerCase().includes(search) ||
+              record.record_id.toString().includes(search) ||
+              (record.phone && record.phone.includes(search))
+            );
           },
 
           // Methods
@@ -828,7 +1329,8 @@
                 alert('Medical record and prescriptions saved successfully!');
                 this.resetRecordForm();
                 this.prescriptionItems = [];
-                await this.loadTodaysAppointments();
+                await this.loadAllAppointments();  // Reload appointments
+                await this.loadAllPatientRecords(); // Reload patient records
                 this.setCurrentPage('today-appointments');
               } else {
                 alert('Failed to save: ' + result.message);
@@ -852,6 +1354,9 @@
               appointment_id: ''
             };
             this.prescriptionItems = [];
+            this.patientSearch = '';
+            this.diagnosisSearch = '';
+            this.medicineSearch = '';
           },
 
           getMedicineName(medicineId) {
@@ -859,12 +1364,59 @@
             return medicine ? medicine.name : 'Unknown Medicine';
           },
 
+          // Selection methods for search dropdowns
+          selectPatient(patient) {
+            this.recordForm.patientId = patient.person_id;
+            this.patientSearch = patient.name;
+          },
+
+          clearPatient() {
+            this.recordForm.patientId = '';
+            this.patientSearch = '';
+          },
+
+          getPatientName(patientId) {
+            const patient = this.patients.find(p => p.person_id === patientId);
+            return patient ? patient.name + ' (ID: ' + patient.person_id + ')' : '';
+          },
+
+          selectDiagnosis(disease) {
+            this.recordForm.diagnosisId = disease.disease_id;
+            this.diagnosisSearch = disease.name;
+          },
+
+          clearDiagnosis() {
+            this.recordForm.diagnosisId = '';
+            this.diagnosisSearch = '';
+          },
+
+          getDiagnosisName(diagnosisId) {
+            const disease = this.diseases.find(d => d.disease_id === diagnosisId);
+            return disease ? disease.name : '';
+          },
+
+          selectMedicine(medicine) {
+            this.newPrescription.medicineId = medicine.medicine_id;
+            this.medicineSearch = medicine.name;
+          },
+
           // Prescription methods
           addPrescriptionItem() {
             if (this.newPrescription.medicineId && this.newPrescription.dosage) {
               this.prescriptionItems.push({ ...this.newPrescription });
               this.newPrescription = { medicineId: '', dosage: '', instructions: '' };
+              this.medicineSearch = '';
             }
+          },
+
+          // View record details
+          viewRecordDetails(record) {
+            this.selectedRecord = record;
+          },
+
+          // Close record details
+          closeRecordDetails() {
+            this.selectedRecord = null;
           },
         };
       }

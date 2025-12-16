@@ -10,8 +10,23 @@ if(!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'
     exit();
 }
 
-// Get all patients (doctors can view all patients for creating records)
-$sql = "SELECT 
+$doctor_id = $_SESSION['user_id'];
+
+// Get doctor's doctor_id from person_id
+$doctor_id_sql = "SELECT doctor_id FROM doctor WHERE person_id = '$doctor_id'";
+$doctor_id_result = executeTrackedQuery($conn, $doctor_id_sql);
+
+if(!$doctor_id_result || mysqli_num_rows($doctor_id_result) == 0){
+    echo json_encode(['success' => false, 'message' => 'Doctor not found']);
+    exit();
+}
+
+$doctor_record = mysqli_fetch_assoc($doctor_id_result);
+$actual_doctor_id = $doctor_record['doctor_id'];
+
+// Only get patients who have appointments with this doctor
+// Patients must have at least one appointment (any status) with this doctor
+$sql = "SELECT DISTINCT
             p.patient_id,
             p.person_id,
             per.name,
@@ -24,6 +39,8 @@ $sql = "SELECT
             p.address
         FROM patient AS p
         INNER JOIN person AS per ON p.person_id = per.person_id
+        INNER JOIN appointment AS a ON p.patient_id = a.patient_id
+        WHERE a.doctor_id = '$actual_doctor_id'
         ORDER BY per.name ASC";
 
 $result = executeTrackedQuery($conn, $sql);
