@@ -39,6 +39,36 @@ $conn->close();
 
 function getAllAppointments($conn){
     global $start_time;
+    
+    // Pagination parameters (default: page 1, 100 records per page)
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $pageSize = isset($_GET['pageSize']) ? max(1, min(100, intval($_GET['pageSize']))) : 100;
+    $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+    
+    // Build WHERE clause for search
+    $whereClause = "";
+    if($search !== ''){
+        $whereClause = "WHERE p_patient.name LIKE '%$search%' 
+                        OR p_doctor.name LIKE '%$search%' 
+                        OR a.symptoms LIKE '%$search%'
+                        OR a.status LIKE '%$search%'";
+    }
+    
+    // Get total count
+    $countSql = "SELECT COUNT(*) as total 
+                 FROM appointment a
+                 JOIN patient AS pat ON a.patient_id = pat.patient_id
+                 JOIN person AS p_patient ON pat.person_id = p_patient.person_id
+                 JOIN doctor AS doc ON a.doctor_id = doc.doctor_id
+                 JOIN person AS p_doctor ON doc.person_id = p_doctor.person_id
+                 $whereClause";
+    $countResult = executeTrackedQuery($conn, $countSql);
+    $totalRecords = mysqli_fetch_assoc($countResult)['total'];
+    $totalPages = ceil($totalRecords / $pageSize);
+    
+    // Calculate offset
+    $offset = ($page - 1) * $pageSize;
+    
     $sql = "SELECT 
                 a.appointment_id,
                 a.patient_id,
@@ -54,7 +84,9 @@ function getAllAppointments($conn){
             JOIN person AS p_patient ON pat.person_id = p_patient.person_id
             JOIN doctor AS doc ON a.doctor_id = doc.doctor_id
             JOIN person AS p_doctor ON doc.person_id = p_doctor.person_id
-            ORDER BY a.appointment_date DESC, a.time DESC";
+            $whereClause
+            ORDER BY a.appointment_date DESC, a.time DESC
+            LIMIT $pageSize OFFSET $offset";
     
     $result = executeTrackedQuery($conn, $sql);
     
@@ -76,7 +108,18 @@ function getAllAppointments($conn){
         
         $end_time = microtime(true);
         $running_time = round(($end_time - $start_time) * 1000, 2);
-        echo json_encode(['success' => true, 'data' => $appointments, 'running_time_ms' => $running_time, 'sql_queries' => getTrackedQueries()]);
+        echo json_encode([
+            'success' => true, 
+            'data' => $appointments, 
+            'pagination' => [
+                'page' => $page,
+                'pageSize' => $pageSize,
+                'totalRecords' => intval($totalRecords),
+                'totalPages' => intval($totalPages)
+            ],
+            'running_time_ms' => $running_time, 
+            'sql_queries' => getTrackedQueries()
+        ]);
     } else {
         $end_time = microtime(true);
         $running_time = round(($end_time - $start_time) * 1000, 2);

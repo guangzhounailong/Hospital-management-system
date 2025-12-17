@@ -189,6 +189,7 @@
                     placeholder="Search name / phone / ID"
                     class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
                     x-model="tableConfig.patients.search"
+                    @input="triggerSearch('patients')"
                   />
                   <button
                     class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
@@ -200,7 +201,16 @@
               </div>
 
               <div class="overflow-x-auto border border-slate-100 rounded-2xl">
-                <table class="min-w-full text-sm">
+                <!-- Loading Indicator -->
+                <div x-show="dataLoading.patients" class="flex items-center justify-center p-12">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+                    <p class="text-sm text-slate-500">Loading patients...</p>
+                  </div>
+                </div>
+                
+                <!-- Data Table -->
+                <table class="min-w-full text-sm" x-show="!dataLoading.patients">
                   <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
                     <tr>
                       <th class="px-4 py-3 text-left">Patient ID</th>
@@ -241,26 +251,29 @@
               <div class="flex items-center justify-between text-xs text-slate-500">
                 <p>
                   Total
-                  <span class="font-semibold text-slate-700" x-text="filteredItems('patients').length"></span>
+                  <span class="font-semibold text-slate-700" x-text="paginationInfo.patients.totalRecords || 0"></span>
                   patients
+                  <span x-show="dataLoading.patients" class="text-sky-600">(loading...)</span>
                 </p>
                 <div class="flex items-center gap-2">
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.patients.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.patients.page === 1 || dataLoading.patients ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.patients.page === 1 || dataLoading.patients"
                     @click="changePage('patients', -1)"
                   >
                     Prev
                   </button>
                   <p>
                     Page
-                    <span x-text="tableConfig.patients.page"></span>
+                    <span x-text="paginationInfo.patients.page"></span>
                     /
-                    <span x-text="totalPages('patients')"></span>
+                    <span x-text="paginationInfo.patients.totalPages || 1"></span>
                   </p>
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.patients.page >= totalPages('patients') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.patients.page >= (paginationInfo.patients.totalPages || 1) || dataLoading.patients ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.patients.page >= (paginationInfo.patients.totalPages || 1) || dataLoading.patients"
                     @click="changePage('patients', 1)"
                   >
                     Next
@@ -285,6 +298,7 @@
                     placeholder="Search name / specialty / department"
                     class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
                     x-model="tableConfig.doctors.search"
+                    @input="triggerSearch('doctors')"
                   />
                   <button
                     class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
@@ -296,7 +310,16 @@
               </div>
 
               <div class="overflow-x-auto border border-slate-100 rounded-2xl">
-                <table class="min-w-full text-sm">
+                <!-- Loading Indicator -->
+                <div x-show="dataLoading.doctors" class="flex items-center justify-center p-12">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+                    <p class="text-sm text-slate-500">Loading doctors...</p>
+                  </div>
+                </div>
+                
+                <!-- Data Table -->
+                <table class="min-w-full text-sm" x-show="!dataLoading.doctors">
                   <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
                     <tr>
                       <th class="px-4 py-3 text-left">Doctor ID</th>
@@ -333,26 +356,29 @@
               <div class="flex items-center justify-between text-xs text-slate-500">
                 <p>
                   Total
-                  <span class="font-semibold text-slate-700" x-text="filteredItems('doctors').length"></span>
+                  <span class="font-semibold text-slate-700" x-text="paginationInfo.doctors.totalRecords || 0"></span>
                   doctors
+                  <span x-show="dataLoading.doctors" class="text-sky-600">(loading...)</span>
                 </p>
                 <div class="flex items-center gap-2">
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.doctors.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.doctors.page === 1 || dataLoading.doctors ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.doctors.page === 1 || dataLoading.doctors"
                     @click="changePage('doctors', -1)"
                   >
                     Prev
                   </button>
                   <p>
                     Page
-                    <span x-text="tableConfig.doctors.page"></span>
+                    <span x-text="paginationInfo.doctors.page"></span>
                     /
-                    <span x-text="totalPages('doctors')"></span>
+                    <span x-text="paginationInfo.doctors.totalPages || 1"></span>
                   </p>
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.doctors.page >= totalPages('doctors') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.doctors.page >= (paginationInfo.doctors.totalPages || 1) || dataLoading.doctors ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.doctors.page >= (paginationInfo.doctors.totalPages || 1) || dataLoading.doctors"
                     @click="changePage('doctors', 1)"
                   >
                     Next
@@ -377,6 +403,7 @@
                     placeholder="Search name / title / department"
                     class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
                     x-model="tableConfig.nurses.search"
+                    @input="triggerSearch('nurses')"
                   />
                   <button
                     class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
@@ -388,7 +415,16 @@
               </div>
 
               <div class="overflow-x-auto border border-slate-100 rounded-2xl">
-                <table class="min-w-full text-sm">
+                <!-- Loading Indicator -->
+                <div x-show="dataLoading.nurses" class="flex items-center justify-center p-12">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+                    <p class="text-sm text-slate-500">Loading nurses...</p>
+                  </div>
+                </div>
+                
+                <!-- Data Table -->
+                <table class="min-w-full text-sm" x-show="!dataLoading.nurses">
                   <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
                     <tr>
                       <th class="px-4 py-3 text-left">Nurse ID</th>
@@ -421,26 +457,29 @@
               <div class="flex items-center justify-between text-xs text-slate-500">
                 <p>
                   Total
-                  <span class="font-semibold text-slate-700" x-text="filteredItems('nurses').length"></span>
+                  <span class="font-semibold text-slate-700" x-text="paginationInfo.nurses.totalRecords || 0"></span>
                   nurses
+                  <span x-show="dataLoading.nurses" class="text-sky-600">(loading...)</span>
                 </p>
                 <div class="flex items-center gap-2">
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.nurses.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.nurses.page === 1 || dataLoading.nurses ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.nurses.page === 1 || dataLoading.nurses"
                     @click="changePage('nurses', -1)"
                   >
                     Prev
                   </button>
                   <p>
                     Page
-                    <span x-text="tableConfig.nurses.page"></span>
+                    <span x-text="paginationInfo.nurses.page"></span>
                     /
-                    <span x-text="totalPages('nurses')"></span>
+                    <span x-text="paginationInfo.nurses.totalPages || 1"></span>
                   </p>
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.nurses.page >= totalPages('nurses') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.nurses.page >= (paginationInfo.nurses.totalPages || 1) || dataLoading.nurses ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.nurses.page >= (paginationInfo.nurses.totalPages || 1) || dataLoading.nurses"
                     @click="changePage('nurses', 1)"
                   >
                     Next
@@ -641,6 +680,7 @@
                     placeholder="Search medicine name / manufacturer"
                     class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
                     x-model="tableConfig.medicines.search"
+                    @input="triggerSearch('medicines')"
                   />
                   <button
                     class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
@@ -652,7 +692,16 @@
               </div>
 
               <div class="overflow-x-auto border border-slate-100 rounded-2xl">
-                <table class="min-w-full text-sm">
+                <!-- Loading Indicator -->
+                <div x-show="dataLoading.medicines" class="flex items-center justify-center p-12">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+                    <p class="text-sm text-slate-500">Loading medicines...</p>
+                  </div>
+                </div>
+                
+                <!-- Data Table -->
+                <table class="min-w-full text-sm" x-show="!dataLoading.medicines">
                   <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
                     <tr>
                       <th class="px-4 py-3 text-left">Medicine ID</th>
@@ -691,26 +740,29 @@
               <div class="flex items-center justify-between text-xs text-slate-500">
                 <p>
                   Total
-                  <span class="font-semibold text-slate-700" x-text="filteredItems('medicines').length"></span>
+                  <span class="font-semibold text-slate-700" x-text="paginationInfo.medicines.totalRecords || 0"></span>
                   medicines
+                  <span x-show="dataLoading.medicines" class="text-sky-600">(loading...)</span>
                 </p>
                 <div class="flex items-center gap-2">
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.medicines.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.medicines.page === 1 || dataLoading.medicines ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.medicines.page === 1 || dataLoading.medicines"
                     @click="changePage('medicines', -1)"
                   >
                     Prev
                   </button>
                   <p>
                     Page
-                    <span x-text="tableConfig.medicines.page"></span>
+                    <span x-text="paginationInfo.medicines.page"></span>
                     /
-                    <span x-text="totalPages('medicines')"></span>
+                    <span x-text="paginationInfo.medicines.totalPages || 1"></span>
                   </p>
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.medicines.page >= totalPages('medicines') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.medicines.page >= (paginationInfo.medicines.totalPages || 1) || dataLoading.medicines ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.medicines.page >= (paginationInfo.medicines.totalPages || 1) || dataLoading.medicines"
                     @click="changePage('medicines', 1)"
                   >
                     Next
@@ -735,6 +787,7 @@
                     placeholder="Search disease name / category"
                     class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
                     x-model="tableConfig.diseases.search"
+                    @input="triggerSearch('diseases')"
                   />
                   <button
                     class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
@@ -746,7 +799,16 @@
               </div>
 
               <div class="overflow-x-auto border border-slate-100 rounded-2xl">
-                <table class="min-w-full text-sm">
+                <!-- Loading Indicator -->
+                <div x-show="dataLoading.diseases" class="flex items-center justify-center p-12">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+                    <p class="text-sm text-slate-500">Loading diseases...</p>
+                  </div>
+                </div>
+                
+                <!-- Data Table -->
+                <table class="min-w-full text-sm" x-show="!dataLoading.diseases">
                   <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
                     <tr>
                       <th class="px-4 py-3 text-left">Disease ID</th>
@@ -779,26 +841,29 @@
               <div class="flex items-center justify-between text-xs text-slate-500">
                 <p>
                   Total
-                  <span class="font-semibold text-slate-700" x-text="filteredItems('diseases').length"></span>
+                  <span class="font-semibold text-slate-700" x-text="paginationInfo.diseases.totalRecords || 0"></span>
                   diseases
+                  <span x-show="dataLoading.diseases" class="text-sky-600">(loading...)</span>
                 </p>
                 <div class="flex items-center gap-2">
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.diseases.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.diseases.page === 1 || dataLoading.diseases ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.diseases.page === 1 || dataLoading.diseases"
                     @click="changePage('diseases', -1)"
                   >
                     Prev
                   </button>
                   <p>
                     Page
-                    <span x-text="tableConfig.diseases.page"></span>
+                    <span x-text="paginationInfo.diseases.page"></span>
                     /
-                    <span x-text="totalPages('diseases')"></span>
+                    <span x-text="paginationInfo.diseases.totalPages || 1"></span>
                   </p>
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.diseases.page >= totalPages('diseases') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.diseases.page >= (paginationInfo.diseases.totalPages || 1) || dataLoading.diseases ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.diseases.page >= (paginationInfo.diseases.totalPages || 1) || dataLoading.diseases"
                     @click="changePage('diseases', 1)"
                   >
                     Next
@@ -823,6 +888,7 @@
                     placeholder="Search patient / doctor / date"
                     class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
                     x-model="tableConfig.appointments.search"
+                    @input="triggerSearch('appointments')"
                   />
                   <button
                     class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
@@ -834,7 +900,16 @@
               </div>
 
               <div class="overflow-x-auto border border-slate-100 rounded-2xl">
-                <table class="min-w-full text-sm">
+                <!-- Loading Indicator -->
+                <div x-show="dataLoading.appointments" class="flex items-center justify-center p-12">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+                    <p class="text-sm text-slate-500">Loading appointments...</p>
+                  </div>
+                </div>
+                
+                <!-- Data Table -->
+                <table class="min-w-full text-sm" x-show="!dataLoading.appointments">
                   <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
                     <tr>
                       <th class="px-4 py-3 text-left">Appointment ID</th>
@@ -873,26 +948,29 @@
               <div class="flex items-center justify-between text-xs text-slate-500">
                 <p>
                   Total
-                  <span class="font-semibold text-slate-700" x-text="filteredItems('appointments').length"></span>
+                  <span class="font-semibold text-slate-700" x-text="paginationInfo.appointments.totalRecords || 0"></span>
                   appointments
+                  <span x-show="dataLoading.appointments" class="text-sky-600">(loading...)</span>
                 </p>
                 <div class="flex items-center gap-2">
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.appointments.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.appointments.page === 1 || dataLoading.appointments ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.appointments.page === 1 || dataLoading.appointments"
                     @click="changePage('appointments', -1)"
                   >
                     Prev
                   </button>
                   <p>
                     Page
-                    <span x-text="tableConfig.appointments.page"></span>
+                    <span x-text="paginationInfo.appointments.page"></span>
                     /
-                    <span x-text="totalPages('appointments')"></span>
+                    <span x-text="paginationInfo.appointments.totalPages || 1"></span>
                   </p>
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.appointments.page >= totalPages('appointments') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.appointments.page >= (paginationInfo.appointments.totalPages || 1) || dataLoading.appointments ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.appointments.page >= (paginationInfo.appointments.totalPages || 1) || dataLoading.appointments"
                     @click="changePage('appointments', 1)"
                   >
                     Next
@@ -917,6 +995,7 @@
                     placeholder="Search patient / doctor / diagnosis"
                     class="border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-sky-100"
                     x-model="tableConfig.records.search"
+                    @input="triggerSearch('records')"
                   />
                   <button
                     class="bg-sky-600 text-white text-sm px-4 py-2 rounded-full shadow hover:bg-sky-500 flex items-center gap-2"
@@ -928,7 +1007,16 @@
               </div>
 
               <div class="overflow-x-auto border border-slate-100 rounded-2xl">
-                <table class="min-w-full text-sm">
+                <!-- Loading Indicator -->
+                <div x-show="dataLoading.records" class="flex items-center justify-center p-12">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+                    <p class="text-sm text-slate-500">Loading records...</p>
+                  </div>
+                </div>
+                
+                <!-- Data Table -->
+                <table class="min-w-full text-sm" x-show="!dataLoading.records">
                   <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
                     <tr>
                       <th class="px-4 py-3 text-left">Record ID</th>
@@ -966,26 +1054,29 @@
               <div class="flex items-center justify-between text-xs text-slate-500">
                 <p>
                   Total
-                  <span class="font-semibold text-slate-700" x-text="filteredItems('records').length"></span>
+                  <span class="font-semibold text-slate-700" x-text="paginationInfo.records.totalRecords || 0"></span>
                   records
+                  <span x-show="dataLoading.records" class="text-sky-600">(loading...)</span>
                 </p>
                 <div class="flex items-center gap-2">
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.records.page === 1 ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.records.page === 1 || dataLoading.records ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.records.page === 1 || dataLoading.records"
                     @click="changePage('records', -1)"
                   >
                     Prev
                   </button>
                   <p>
                     Page
-                    <span x-text="tableConfig.records.page"></span>
+                    <span x-text="paginationInfo.records.page"></span>
                     /
-                    <span x-text="totalPages('records')"></span>
+                    <span x-text="paginationInfo.records.totalPages || 1"></span>
                   </p>
                   <button
                     class="px-3 py-1 border rounded-full"
-                    :class="tableConfig.records.page >= totalPages('records') ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :class="paginationInfo.records.page >= (paginationInfo.records.totalPages || 1) || dataLoading.records ? 'text-slate-300 border-slate-200' : 'text-slate-600 border-slate-300 hover:border-slate-400'"
+                    :disabled="paginationInfo.records.page >= (paginationInfo.records.totalPages || 1) || dataLoading.records"
                     @click="changePage('records', 1)"
                   >
                     Next
@@ -1629,6 +1720,43 @@
           appointments: [],
           records: [],
 
+          // Server-side pagination info
+          paginationInfo: {
+            patients: { page: 1, pageSize: 100, totalRecords: 0, totalPages: 1 },
+            doctors: { page: 1, pageSize: 100, totalRecords: 0, totalPages: 1 },
+            nurses: { page: 1, pageSize: 100, totalRecords: 0, totalPages: 1 },
+            medicines: { page: 1, pageSize: 100, totalRecords: 0, totalPages: 1 },
+            diseases: { page: 1, pageSize: 100, totalRecords: 0, totalPages: 1 },
+            appointments: { page: 1, pageSize: 100, totalRecords: 0, totalPages: 1 },
+            records: { page: 1, pageSize: 100, totalRecords: 0, totalPages: 1 }
+          },
+
+          // Data loading status - track if data is loaded for lazy loading
+          dataLoaded: {
+            patients: false,
+            doctors: false,
+            nurses: false,
+            departments: false,
+            wards: false,
+            medicines: false,
+            diseases: false,
+            appointments: false,
+            records: false
+          },
+
+          // Data loading state - show loading indicators
+          dataLoading: {
+            patients: false,
+            doctors: false,
+            nurses: false,
+            departments: false,
+            wards: false,
+            medicines: false,
+            diseases: false,
+            appointments: false,
+            records: false
+          },
+
           // Table Configuration
           tableConfig: {
             patients: { search: "", page: 1, pageSize: 5, fields: ["person_id", "name"] },
@@ -1642,19 +1770,13 @@
             records: { search: "", page: 1, pageSize: 5, fields: ["record_id", "patient_name"] },
           },
 
-          // Initialize - Load all data
+          // Initialize - Lazy loading: Only load essential data on startup
           async init() {
             await this.loadAdminData();
             await this.loadStats();
+            // Load departments for dropdowns (needed globally)
             await this.loadDepartments();
-            await this.loadPatients();
-            await this.loadDoctors();
-            await this.loadNurses();
-            await this.loadWards();
-            await this.loadMedicines();
-            await this.loadDiseases();
-            await this.loadAppointments();
-            await this.loadRecords();
+            // Other data will be loaded when user navigates to specific page
           },
 
           // Load admin data
@@ -1686,37 +1808,91 @@
             }
           },
 
-          // Load patients
+          // Load patients with server-side pagination
           async loadPatients() {
+            if (this.dataLoading.patients) return; // Prevent duplicate requests
+            
+            this.dataLoading.patients = true;
             try {
-              const response = await fetch('admin_patients.php');
+              const cfg = this.tableConfig.patients;
+              const pInfo = this.paginationInfo.patients;
+              const params = new URLSearchParams({
+                page: pInfo.page,
+                pageSize: pInfo.pageSize,
+                search: cfg.search
+              });
+              
+              const response = await fetch(`admin_patients.php?${params}`);
               const result = await response.json();
-              if (result.success) this.patients = result.data;
+              if (result.success) {
+                this.patients = result.data;
+                if (result.pagination) {
+                  this.paginationInfo.patients = result.pagination;
+                }
+                this.dataLoaded.patients = true;
+              }
             } catch (error) {
               console.error('Error loading patients:', error);
             }
+            this.dataLoading.patients = false;
           },
 
-          // Load doctors
+          // Load doctors with server-side pagination
           async loadDoctors() {
+            if (this.dataLoading.doctors) return;
+            
+            this.dataLoading.doctors = true;
             try {
-              const response = await fetch('admin_doctors.php');
+              const cfg = this.tableConfig.doctors;
+              const pInfo = this.paginationInfo.doctors;
+              const params = new URLSearchParams({
+                page: pInfo.page,
+                pageSize: pInfo.pageSize,
+                search: cfg.search
+              });
+              
+              const response = await fetch(`admin_doctors.php?${params}`);
               const result = await response.json();
-              if (result.success) this.doctors = result.data;
+              if (result.success) {
+                this.doctors = result.data;
+                if (result.pagination) {
+                  this.paginationInfo.doctors = result.pagination;
+                }
+                this.dataLoaded.doctors = true;
+              }
             } catch (error) {
               console.error('Error loading doctors:', error);
             }
+            this.dataLoading.doctors = false;
           },
 
-          // Load nurses
+          // Load nurses with server-side pagination
           async loadNurses() {
+            if (this.dataLoading.nurses) return;
+            
+            this.dataLoading.nurses = true;
             try {
-              const response = await fetch('admin_nurses.php');
+              const cfg = this.tableConfig.nurses;
+              const pInfo = this.paginationInfo.nurses;
+              const params = new URLSearchParams({
+                page: pInfo.page,
+                pageSize: pInfo.pageSize,
+                search: cfg.search
+              });
+              
+              const response = await fetch(`admin_nurses.php?${params}`);
               const result = await response.json();
-              if (result.success) this.nurses = result.data;
+              if (result.success) {
+                this.nurses = result.data;
+                if (result.pagination) {
+                  this.paginationInfo.nurses = result.pagination;
+                }
+                this.dataLoaded.nurses = true;
+              }
             } catch (error) {
               console.error('Error loading nurses:', error);
             }
+            this.dataLoading.nurses = false;
           },
 
           // Load departments
@@ -1741,54 +1917,146 @@
             }
           },
 
-          // Load medicines
+          // Load medicines with server-side pagination
           async loadMedicines() {
+            if (this.dataLoading.medicines) return;
+            
+            this.dataLoading.medicines = true;
             try {
-              const response = await fetch('admin_medicines.php');
+              const cfg = this.tableConfig.medicines;
+              const pInfo = this.paginationInfo.medicines;
+              const params = new URLSearchParams({
+                page: pInfo.page,
+                pageSize: pInfo.pageSize,
+                search: cfg.search
+              });
+              
+              const response = await fetch(`admin_medicines.php?${params}`);
               const result = await response.json();
-              if (result.success) this.medicines = result.data;
+              if (result.success) {
+                this.medicines = result.data;
+                if (result.pagination) {
+                  this.paginationInfo.medicines = result.pagination;
+                }
+                this.dataLoaded.medicines = true;
+              }
             } catch (error) {
               console.error('Error loading medicines:', error);
             }
+            this.dataLoading.medicines = false;
           },
 
-          // Load diseases
+          // Load diseases with server-side pagination
           async loadDiseases() {
+            if (this.dataLoading.diseases) return;
+            
+            this.dataLoading.diseases = true;
             try {
-              const response = await fetch('admin_diseases.php');
+              const cfg = this.tableConfig.diseases;
+              const pInfo = this.paginationInfo.diseases;
+              const params = new URLSearchParams({
+                page: pInfo.page,
+                pageSize: pInfo.pageSize,
+                search: cfg.search
+              });
+              
+              const response = await fetch(`admin_diseases.php?${params}`);
               const result = await response.json();
-              if (result.success) this.diseases = result.data;
+              if (result.success) {
+                this.diseases = result.data;
+                if (result.pagination) {
+                  this.paginationInfo.diseases = result.pagination;
+                }
+                this.dataLoaded.diseases = true;
+              }
             } catch (error) {
               console.error('Error loading diseases:', error);
             }
+            this.dataLoading.diseases = false;
           },
 
-          // Load appointments
+          // Load appointments with server-side pagination
           async loadAppointments() {
+            if (this.dataLoading.appointments) return;
+            
+            this.dataLoading.appointments = true;
             try {
-              const response = await fetch('admin_appointments.php');
+              const cfg = this.tableConfig.appointments;
+              const pInfo = this.paginationInfo.appointments;
+              const params = new URLSearchParams({
+                page: pInfo.page,
+                pageSize: pInfo.pageSize,
+                search: cfg.search
+              });
+              
+              const response = await fetch(`admin_appointments.php?${params}`);
               const result = await response.json();
-              if (result.success) this.appointments = result.data;
+              if (result.success) {
+                this.appointments = result.data;
+                if (result.pagination) {
+                  this.paginationInfo.appointments = result.pagination;
+                }
+                this.dataLoaded.appointments = true;
+              }
             } catch (error) {
               console.error('Error loading appointments:', error);
             }
+            this.dataLoading.appointments = false;
           },
 
-          // Load medical records
+          // Load medical records with server-side pagination
           async loadRecords() {
+            if (this.dataLoading.records) return;
+            
+            this.dataLoading.records = true;
             try {
-              const response = await fetch('admin_records.php');
+              const cfg = this.tableConfig.records;
+              const pInfo = this.paginationInfo.records;
+              const params = new URLSearchParams({
+                page: pInfo.page,
+                pageSize: pInfo.pageSize,
+                search: cfg.search
+              });
+              
+              const response = await fetch(`admin_records.php?${params}`);
               const result = await response.json();
-              if (result.success) this.records = result.data;
+              if (result.success) {
+                this.records = result.data;
+                if (result.pagination) {
+                  this.paginationInfo.records = result.pagination;
+                }
+                this.dataLoaded.records = true;
+              }
             } catch (error) {
               console.error('Error loading records:', error);
             }
+            this.dataLoading.records = false;
           },
 
           // Methods
           setCurrentPage(page) {
             this.currentPage = page;
             this.sidebarOpen = false;
+            // Lazy load data when navigating to a page
+            this.lazyLoadPageData(page);
+          },
+
+          // Lazy load data for specific page
+          async lazyLoadPageData(page) {
+            const loadMap = {
+              'patients': () => !this.dataLoaded.patients && this.loadPatients(),
+              'doctors': () => !this.dataLoaded.doctors && this.loadDoctors(),
+              'nurses': () => !this.dataLoaded.nurses && this.loadNurses(),
+              'wards': () => !this.dataLoaded.wards && this.loadWards(),
+              'medicines': () => !this.dataLoaded.medicines && this.loadMedicines(),
+              'diseases': () => !this.dataLoaded.diseases && this.loadDiseases(),
+              'appointments': () => !this.dataLoaded.appointments && this.loadAppointments(),
+              'records': () => !this.dataLoaded.records && this.loadRecords()
+            };
+            
+            if (loadMap[page]) {
+              await loadMap[page]();
+            }
           },
 
           async logout() {
@@ -1800,37 +2068,76 @@
             window.location.href = 'login.html';
           },
 
-          // Table Methods
+          // Table Methods - Server-side pagination
           filteredItems(key) {
-            const cfg = this.tableConfig[key];
-            if (!cfg) return [];
-            const term = cfg.search.trim().toLowerCase();
-            if (!term) return this[key] || [];
-            return (this[key] || []).filter((item) =>
-              cfg.fields.some((field) => (item[field] || "").toString().toLowerCase().includes(term))
-            );
+            // Server-side pagination: just return current data
+            return this[key] || [];
           },
 
           totalPages(key) {
+            // Use server-side pagination info
+            const pInfo = this.paginationInfo[key];
+            if (pInfo && pInfo.totalPages) {
+              return pInfo.totalPages;
+            }
+            // Fallback for modules without server-side pagination
             const cfg = this.tableConfig[key];
             if (!cfg) return 1;
-            return Math.max(1, Math.ceil(this.filteredItems(key).length / cfg.pageSize));
+            return Math.max(1, Math.ceil((this[key] || []).length / cfg.pageSize));
           },
 
           pagedItems(key) {
-            const cfg = this.tableConfig[key];
-            if (!cfg) return [];
-            const total = this.totalPages(key);
-            if (cfg.page > total) cfg.page = total;
-            const start = (cfg.page - 1) * cfg.pageSize;
-            return this.filteredItems(key).slice(start, start + cfg.pageSize);
+            // Server-side pagination: data is already paged
+            return this[key] || [];
           },
 
-          changePage(key, step) {
-            const cfg = this.tableConfig[key];
-            if (!cfg) return;
-            const total = this.totalPages(key);
-            cfg.page = Math.min(Math.max(1, cfg.page + step), total);
+          // Server-side pagination: change page and reload data
+          async changePage(key, step) {
+            const pInfo = this.paginationInfo[key];
+            if (!pInfo) return;
+            
+            const total = pInfo.totalPages || 1;
+            const newPage = Math.min(Math.max(1, pInfo.page + step), total);
+            
+            if (newPage !== pInfo.page) {
+              pInfo.page = newPage;
+              this.dataLoaded[key] = false; // Force reload
+              await this.reloadModuleData(key);
+            }
+          },
+
+          // Debounced search for server-side filtering
+          searchTimeout: null,
+          async triggerSearch(key) {
+            if (this.searchTimeout) {
+              clearTimeout(this.searchTimeout);
+            }
+            this.searchTimeout = setTimeout(async () => {
+              // Reset to page 1 on new search
+              if (this.paginationInfo[key]) {
+                this.paginationInfo[key].page = 1;
+              }
+              this.dataLoaded[key] = false;
+              await this.reloadModuleData(key);
+            }, 500);
+          },
+
+          // Reload data for a specific module
+          async reloadModuleData(key) {
+            const loadMethods = {
+              'patients': () => this.loadPatients(),
+              'doctors': () => this.loadDoctors(),
+              'nurses': () => this.loadNurses(),
+              'wards': () => this.loadWards(),
+              'medicines': () => this.loadMedicines(),
+              'diseases': () => this.loadDiseases(),
+              'appointments': () => this.loadAppointments(),
+              'records': () => this.loadRecords()
+            };
+            
+            if (loadMethods[key]) {
+              await loadMethods[key]();
+            }
           },
 
           // Modal Methods

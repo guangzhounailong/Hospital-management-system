@@ -35,9 +35,33 @@ switch($method){
 $conn->close();
 
 function getAllDiseases($conn){
+    // Pagination parameters (default: page 1, 100 records per page)
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $pageSize = isset($_GET['pageSize']) ? max(1, min(100, intval($_GET['pageSize']))) : 100;
+    $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+    
+    // Build WHERE clause for search
+    $whereClause = "";
+    if($search !== ''){
+        $whereClause = "WHERE disease_name LIKE '%$search%' 
+                        OR category LIKE '%$search%' 
+                        OR description LIKE '%$search%'";
+    }
+    
+    // Get total count
+    $countSql = "SELECT COUNT(*) as total FROM disease $whereClause";
+    $countResult = executeTrackedQuery($conn, $countSql);
+    $totalRecords = mysqli_fetch_assoc($countResult)['total'];
+    $totalPages = ceil($totalRecords / $pageSize);
+    
+    // Calculate offset
+    $offset = ($page - 1) * $pageSize;
+    
     $sql = "SELECT disease_id, disease_name as name, category, description, common_treatments 
             FROM disease 
-            ORDER BY disease_id ASC";
+            $whereClause
+            ORDER BY disease_id ASC
+            LIMIT $pageSize OFFSET $offset";
     $result = executeTrackedQuery($conn, $sql);
     
     if($result){
@@ -45,7 +69,17 @@ function getAllDiseases($conn){
         while($row = mysqli_fetch_assoc($result)){
             $diseases[] = $row;
         }
-        echo json_encode(['success' => true, 'data' => $diseases, 'sql_queries' => getTrackedQueries()]);
+        echo json_encode([
+            'success' => true, 
+            'data' => $diseases,
+            'pagination' => [
+                'page' => $page,
+                'pageSize' => $pageSize,
+                'totalRecords' => intval($totalRecords),
+                'totalPages' => intval($totalPages)
+            ],
+            'sql_queries' => getTrackedQueries()
+        ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to fetch diseases']);
     }

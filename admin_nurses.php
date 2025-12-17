@@ -35,6 +35,33 @@ switch($method){
 $conn->close();
 
 function getAllNurses($conn){
+    // Pagination parameters (default: page 1, 100 records per page)
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $pageSize = isset($_GET['pageSize']) ? max(1, min(100, intval($_GET['pageSize']))) : 100;
+    $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+    
+    // Build WHERE clause for search
+    $whereClause = "";
+    if($search !== ''){
+        $whereClause = "WHERE p.name LIKE '%$search%' 
+                        OR n.title LIKE '%$search%' 
+                        OR d.department_name LIKE '%$search%' 
+                        OR p.phone LIKE '%$search%'";
+    }
+    
+    // Get total count
+    $countSql = "SELECT COUNT(*) as total 
+                 FROM nurse AS n
+                 JOIN person AS p ON n.person_id = p.person_id
+                 LEFT JOIN department AS d ON n.department_id = d.department_id
+                 $whereClause";
+    $countResult = executeTrackedQuery($conn, $countSql);
+    $totalRecords = mysqli_fetch_assoc($countResult)['total'];
+    $totalPages = ceil($totalRecords / $pageSize);
+    
+    // Calculate offset
+    $offset = ($page - 1) * $pageSize;
+    
     $sql = "SELECT 
                 n.nurse_id,
                 n.person_id,
@@ -49,7 +76,9 @@ function getAllNurses($conn){
             FROM nurse AS n
             JOIN person AS p ON n.person_id = p.person_id
             LEFT JOIN department AS d ON n.department_id = d.department_id
-            ORDER BY n.nurse_id ASC";
+            $whereClause
+            ORDER BY n.nurse_id ASC
+            LIMIT $pageSize OFFSET $offset";
     
     $result = executeTrackedQuery($conn, $sql);
     
@@ -70,7 +99,17 @@ function getAllNurses($conn){
             ];
         }
         
-        echo json_encode(['success' => true, 'data' => $nurses, 'sql_queries' => getTrackedQueries()]);
+        echo json_encode([
+            'success' => true, 
+            'data' => $nurses,
+            'pagination' => [
+                'page' => $page,
+                'pageSize' => $pageSize,
+                'totalRecords' => intval($totalRecords),
+                'totalPages' => intval($totalPages)
+            ],
+            'sql_queries' => getTrackedQueries()
+        ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to fetch nurses']);
     }

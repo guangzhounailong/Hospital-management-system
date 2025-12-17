@@ -35,6 +35,35 @@ switch($method){
 $conn->close();
 
 function getAllRecords($conn){
+    // Pagination parameters (default: page 1, 100 records per page)
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $pageSize = isset($_GET['pageSize']) ? max(1, min(100, intval($_GET['pageSize']))) : 100;
+    $search = isset($_GET['search']) ? mysqli_real_escape_string($conn, trim($_GET['search'])) : '';
+    
+    // Build WHERE clause for search
+    $whereClause = "";
+    if($search !== ''){
+        $whereClause = "WHERE p_patient.name LIKE '%$search%' 
+                        OR p_doctor.name LIKE '%$search%' 
+                        OR mr.diagnosis LIKE '%$search%'
+                        OR mr.treatment_plan LIKE '%$search%'";
+    }
+    
+    // Get total count
+    $countSql = "SELECT COUNT(*) as total 
+                 FROM medical_record AS mr
+                 JOIN patient AS pat ON mr.patient_id = pat.patient_id
+                 JOIN person AS p_patient ON pat.person_id = p_patient.person_id
+                 JOIN doctor AS doc ON mr.doctor_id = doc.doctor_id
+                 JOIN person AS p_doctor ON doc.person_id = p_doctor.person_id
+                 $whereClause";
+    $countResult = executeTrackedQuery($conn, $countSql);
+    $totalRecords = mysqli_fetch_assoc($countResult)['total'];
+    $totalPages = ceil($totalRecords / $pageSize);
+    
+    // Calculate offset
+    $offset = ($page - 1) * $pageSize;
+    
     $sql = "SELECT 
                 mr.record_id,
                 mr.patient_id,
@@ -51,7 +80,9 @@ function getAllRecords($conn){
             JOIN person AS p_patient ON pat.person_id = p_patient.person_id
             JOIN doctor AS doc ON mr.doctor_id = doc.doctor_id
             JOIN person AS p_doctor ON doc.person_id = p_doctor.person_id
-            ORDER BY mr.record_date DESC";
+            $whereClause
+            ORDER BY mr.record_date DESC
+            LIMIT $pageSize OFFSET $offset";
     
     $result = executeTrackedQuery($conn, $sql);
     
@@ -72,7 +103,17 @@ function getAllRecords($conn){
             ];
         }
         
-        echo json_encode(['success' => true, 'data' => $records, 'sql_queries' => getTrackedQueries()]);
+        echo json_encode([
+            'success' => true, 
+            'data' => $records,
+            'pagination' => [
+                'page' => $page,
+                'pageSize' => $pageSize,
+                'totalRecords' => intval($totalRecords),
+                'totalPages' => intval($totalPages)
+            ],
+            'sql_queries' => getTrackedQueries()
+        ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to fetch medical records']);
     }
