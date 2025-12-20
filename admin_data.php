@@ -18,7 +18,8 @@ $sql = "SELECT
             a.person_id,
             p.name,
             p.gender,
-            p.age,
+            p.date_of_birth,
+            TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) AS age,
             p.phone
         FROM admin AS a
         JOIN person AS p ON a.person_id = p.person_id

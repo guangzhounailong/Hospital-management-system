@@ -68,7 +68,8 @@ function getAllNurses($conn){
                 p.name,
                 p.phone,
                 p.gender,
-                p.age,
+                p.date_of_birth,
+                TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) AS age,
                 n.title,
                 n.schedule,
                 n.department_id,
@@ -91,7 +92,8 @@ function getAllNurses($conn){
                 'name' => $row['name'],
                 'phone' => $row['phone'],
                 'gender' => $row['gender'],
-                'age' => $row['age'],
+                'date_of_birth' => $row['date_of_birth'],
+                'age' => $row['age'] ?? 0,
                 'title' => $row['title'],
                 'schedule' => $row['schedule'],
                 'department_id' => $row['department_id'],
@@ -134,11 +136,11 @@ function createNurse($conn, $data){
     
     $password = isset($data['password']) ? $data['password'] : 'nurse123';
     $gender = isset($data['gender']) ? $data['gender'] : 'F';
-    $age = isset($data['age']) ? $data['age'] : 25;
+    $date_of_birth = isset($data['date_of_birth']) ? $data['date_of_birth'] : '1995-01-01';
     
     // Insert into person table
-    $person_sql = "INSERT INTO person (person_id, name, gender, age, phone, password) 
-                   VALUES ('$new_person_id', '{$data['name']}', '$gender', '$age', '{$data['phone']}', '$password')";
+    $person_sql = "INSERT INTO person (person_id, name, gender, date_of_birth, phone, password) 
+                   VALUES ('$new_person_id', '{$data['name']}', '$gender', '$date_of_birth', '{$data['phone']}', '$password')";
     
     if(executeTrackedQuery($conn, $person_sql)){
         $schedule = isset($data['schedule']) ? $data['schedule'] : 'Day Shift';
@@ -178,7 +180,7 @@ function updateNurse($conn, $data){
     if(isset($data['name'])) $person_updates[] = "name = '{$data['name']}'";
     if(isset($data['phone'])) $person_updates[] = "phone = '{$data['phone']}'";
     if(isset($data['gender'])) $person_updates[] = "gender = '{$data['gender']}'";
-    if(isset($data['age'])) $person_updates[] = "age = '{$data['age']}'";
+    if(isset($data['date_of_birth'])) $person_updates[] = "date_of_birth = '{$data['date_of_birth']}'";
     
     if(!empty($person_updates)){
         executeTrackedQuery($conn, "UPDATE person SET " . implode(', ', $person_updates) . " WHERE person_id = '$person_id'");

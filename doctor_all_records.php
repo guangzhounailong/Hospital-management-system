@@ -25,7 +25,8 @@ $sql = "SELECT
             per.name AS patient_name,
             per.phone,
             per.gender,
-            per.age,
+            per.date_of_birth,
+            TIMESTAMPDIFF(YEAR, per.date_of_birth, CURDATE()) AS age,
             pat.blood_type
         FROM medical_record AS mr
         JOIN patient AS p ON mr.patient_id = p.patient_id
@@ -95,7 +96,8 @@ if($result){
             'patient_name' => $row['patient_name'],
             'phone' => $row['phone'],
             'gender' => $gender_display,
-            'age' => $row['age'],
+            'date_of_birth' => $row['date_of_birth'],
+            'age' => $row['age'] ?? 0,
             'blood_type' => $row['blood_type'] ?? 'N/A',
             'record_date' => $row['record_date'],
             'diagnosis' => $row['diagnosis'],

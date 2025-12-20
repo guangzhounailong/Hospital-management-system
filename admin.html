@@ -217,7 +217,7 @@
                       <th class="px-4 py-3 text-left">Name</th>
                       <th class="px-4 py-3 text-left">Phone</th>
                       <th class="px-4 py-3 text-left">Gender</th>
-                      <th class="px-4 py-3 text-left">Age</th>
+                      <th class="px-4 py-3 text-left">DOB / Age</th>
                       <th class="px-4 py-3 text-left">Height(cm)</th>
                       <th class="px-4 py-3 text-left">Weight(kg)</th>
                       <th class="px-4 py-3 text-left">Blood Type</th>
@@ -232,7 +232,10 @@
                         <td class="px-4 py-3" x-text="patient.name"></td>
                         <td class="px-4 py-3" x-text="patient.phone"></td>
                         <td class="px-4 py-3" x-text="patient.gender"></td>
-                        <td class="px-4 py-3" x-text="patient.age"></td>
+                        <td class="px-4 py-3">
+                          <div class="text-xs text-slate-500" x-text="patient.date_of_birth || 'N/A'"></div>
+                          <div class="font-medium" x-text="patient.age + ' yrs'"></div>
+                        </td>
                         <td class="px-4 py-3" x-text="patient.height_cm"></td>
                         <td class="px-4 py-3" x-text="patient.weight_kg"></td>
                         <td class="px-4 py-3" x-text="patient.blood_type"></td>
@@ -1130,8 +1133,12 @@
               </select>
             </label>
             <label class="flex flex-col gap-1">
-              <span>Age</span>
-              <input type="number" class="input" x-model="modal.form.age" :disabled="modal.mode === 'view'" />
+              <span>Date of Birth</span>
+              <input type="date" class="input" x-model="modal.form.date_of_birth" :disabled="modal.mode === 'view'" />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span>Age (Calculated)</span>
+              <input type="text" class="input bg-slate-100" :value="modal.form.date_of_birth ? Math.floor((new Date() - new Date(modal.form.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000)) + ' years' : 'N/A'" disabled />
             </label>
             <label class="flex flex-col gap-1">
               <span>Height (cm)</span>
@@ -1310,7 +1317,7 @@
           <!-- Nurse Form -->
           <form x-show="modal.type === 'nurse'" class="grid md:grid-cols-2 gap-4">
             <!-- TODO: GET /api/nurses/{id} fetch nurse detail -->
-            <!-- TODO: POST /api/nurses create nurse, body: {nurse_id,person_id,name,phone,gender,age,password,title,schedule,department_id} -->
+            <!-- TODO: POST /api/nurses create nurse, body: {nurse_id,person_id,name,phone,gender,date_of_birth,password,title,schedule,department_id} -->
             <!-- TODO: PUT /api/nurses/{id} update nurse info -->
             <label class="flex flex-col gap-1">
               <span>Nurse ID</span>
@@ -1333,8 +1340,8 @@
               </select>
             </label>
             <label class="flex flex-col gap-1">
-              <span>Age</span>
-              <input type="number" class="input" x-model="modal.form.age" :disabled="modal.mode === 'view'" min="0" />
+              <span>Date of Birth</span>
+              <input type="date" class="input" x-model="modal.form.date_of_birth" :disabled="modal.mode === 'view'" />
             </label>
             <label class="flex flex-col gap-1">
               <span>Title</span>

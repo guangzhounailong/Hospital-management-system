@@ -81,7 +81,8 @@ function getAllPatients($conn){
                 per.name,
                 per.phone,
                 per.gender,
-                per.age,
+                per.date_of_birth,
+                TIMESTAMPDIFF(YEAR, per.date_of_birth, CURDATE()) AS age,
                 p.height_cm,
                 p.weight_kg,
                 p.blood_type,
@@ -103,7 +104,8 @@ function getAllPatients($conn){
                 'name' => $row['name'],
                 'phone' => $row['phone'],
                 'gender' => $row['gender'],
-                'age' => $row['age'],
+                'date_of_birth' => $row['date_of_birth'],
+                'age' => $row['age'] ?? 0,
                 'height_cm' => $row['height_cm'] ?? 0,
                 'weight_kg' => $row['weight_kg'] ?? 0,
                 'blood_type' => $row['blood_type'] ?? 'N/A',
@@ -135,7 +137,8 @@ function getSinglePatient($conn, $person_id){
                 per.name,
                 per.phone,
                 per.gender,
-                per.age,
+                per.date_of_birth,
+                TIMESTAMPDIFF(YEAR, per.date_of_birth, CURDATE()) AS age,
                 p.height_cm,
                 p.weight_kg,
                 p.blood_type,
@@ -154,7 +157,8 @@ function getSinglePatient($conn, $person_id){
             'name' => $row['name'],
             'phone' => $row['phone'],
             'gender' => $row['gender'],
-            'age' => $row['age'],
+            'date_of_birth' => $row['date_of_birth'],
+            'age' => $row['age'] ?? 0,
             'height_cm' => $row['height_cm'],
             'weight_kg' => $row['weight_kg'],
             'blood_type' => $row['blood_type'],
@@ -170,7 +174,7 @@ function getSinglePatient($conn, $person_id){
 // Create new patient
 function createPatient($conn, $data){
     // Validate required fields
-    if(empty($data['name']) || empty($data['phone']) || empty($data['gender']) || empty($data['age'])){
+    if(empty($data['name']) || empty($data['phone']) || empty($data['gender']) || empty($data['date_of_birth'])){
         echo json_encode(['success' => false, 'message' => 'Missing required fields']);
         return;
     }
@@ -191,8 +195,8 @@ function createPatient($conn, $data){
     $password = isset($data['password']) ? $data['password'] : 'patient123';
     
     // Insert into person table
-    $person_sql = "INSERT INTO person (person_id, name, gender, age, phone, password) 
-                   VALUES ('$new_person_id', '{$data['name']}', '{$data['gender']}', '{$data['age']}', '{$data['phone']}', '$password')";
+    $person_sql = "INSERT INTO person (person_id, name, gender, date_of_birth, phone, password) 
+                   VALUES ('$new_person_id', '{$data['name']}', '{$data['gender']}', '{$data['date_of_birth']}', '{$data['phone']}', '$password')";
     
     if(executeTrackedQuery($conn, $person_sql)){
         // Build patient insert SQL dynamically
@@ -245,12 +249,12 @@ function updatePatient($conn, $data){
     $person_id = $data['person_id'];
     
     // Update person table
-    if(isset($data['name']) || isset($data['phone']) || isset($data['gender']) || isset($data['age'])){
+    if(isset($data['name']) || isset($data['phone']) || isset($data['gender']) || isset($data['date_of_birth'])){
         $updates = [];
         if(isset($data['name'])) $updates[] = "name = '{$data['name']}'";
         if(isset($data['phone'])) $updates[] = "phone = '{$data['phone']}'";
         if(isset($data['gender'])) $updates[] = "gender = '{$data['gender']}'";
-        if(isset($data['age'])) $updates[] = "age = '{$data['age']}'";
+        if(isset($data['date_of_birth'])) $updates[] = "date_of_birth = '{$data['date_of_birth']}'";
         
         if(!empty($updates)){
             $person_sql = "UPDATE person SET " . implode(', ', $updates) . " WHERE person_id = '$person_id'";

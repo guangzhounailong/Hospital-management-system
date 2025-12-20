@@ -5,7 +5,7 @@ include "connectDB.php";
 // Get form data
 $name = $_POST["name"];
 $gender = $_POST["gender"];
-$age = $_POST["age"];
+$date_of_birth = $_POST["date_of_birth"];
 $height = isset($_POST["height"]) && $_POST["height"] != "" ? $_POST["height"] : null;
 $weight = isset($_POST["weight"]) && $_POST["weight"] != "" ? $_POST["weight"] : null;
 $address = isset($_POST["address"]) && $_POST["address"] != "" ? $_POST["address"] : null;
@@ -14,7 +14,7 @@ $password = $_POST["password"];
 $passwordConfirm = $_POST["passwordConfirm"];
 
 // Validate required fields are not empty
-if($name == null || $gender == null || $age == null || $username == null || $password == null || $passwordConfirm == null){
+if($name == null || $gender == null || $date_of_birth == null || $username == null || $password == null || $passwordConfirm == null){
     header("Location: register.html?error=empty");
     exit();
 }
@@ -41,8 +41,8 @@ $max_id_row = mysqli_fetch_array($max_id_result);
 $new_person_id = ($max_id_row['max_id'] == null) ? 1 : $max_id_row['max_id'] + 1;
 
 // Insert new user into person table
-$insert_person_sql = "INSERT INTO person (person_id, name, gender, age, phone, password) 
-                      VALUES ('$new_person_id', '$name', '$gender', '$age', '$username', '$password')";
+$insert_person_sql = "INSERT INTO person (person_id, name, gender, date_of_birth, phone, password) 
+                      VALUES ('$new_person_id', '$name', '$gender', '$date_of_birth', '$username', '$password')";
 
 if(executeTrackedQuery($conn, $insert_person_sql)){
     // Get max patient_id and increment by 1

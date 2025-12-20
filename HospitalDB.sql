@@ -6,12 +6,11 @@ create table person(
     person_id INT,
     name VARCHAR(50) NOT NULL,
     gender CHAR(1) NOT NULL,
-    age INT,
+    date_of_birth DATE,
     phone VARCHAR(20) UNIQUE,
     password VARCHAR(255) NOT NULL,
     PRIMARY KEY (person_id),
-    CONSTRAINT gender_check CHECK(gender IN ('M', 'F', 'O')),
-    CONSTRAINT age_check CHECK(age >= 0)
+    CONSTRAINT gender_check CHECK(gender IN ('M', 'F', 'O'))
 );
 
 create table department(

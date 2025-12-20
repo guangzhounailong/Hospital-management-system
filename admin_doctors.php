@@ -76,7 +76,8 @@ function getAllDoctors($conn){
                 p.name,
                 p.phone,
                 p.gender,
-                p.age,
+                p.date_of_birth,
+                TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) AS age,
                 d.specialty,
                 d.year_experience,
                 d.salary,
@@ -100,7 +101,8 @@ function getAllDoctors($conn){
                 'name' => $row['name'],
                 'phone' => $row['phone'],
                 'gender' => $row['gender'],
-                'age' => $row['age'],
+                'date_of_birth' => $row['date_of_birth'],
+                'age' => $row['age'] ?? 0,
                 'specialty' => $row['specialty'],
                 'year_experience' => $row['year_experience'] ?? 0,
                 'salary' => $row['salary'] ?? 0,
@@ -132,7 +134,8 @@ function getSingleDoctor($conn, $doctor_id){
                 p.name,
                 p.phone,
                 p.gender,
-                p.age,
+                p.date_of_birth,
+                TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) AS age,
                 d.specialty,
                 d.year_experience,
                 d.salary,
@@ -170,11 +173,11 @@ function createDoctor($conn, $data){
     
     $password = isset($data['password']) ? $data['password'] : 'doctor123';
     $gender = isset($data['gender']) ? $data['gender'] : 'M';
-    $age = isset($data['age']) ? $data['age'] : 30;
+    $date_of_birth = isset($data['date_of_birth']) ? $data['date_of_birth'] : '1990-01-01';
     
     // Insert into person table
-    $person_sql = "INSERT INTO person (person_id, name, gender, age, phone, password) 
-                   VALUES ('$new_person_id', '{$data['name']}', '$gender', '$age', '{$data['phone']}', '$password')";
+    $person_sql = "INSERT INTO person (person_id, name, gender, date_of_birth, phone, password) 
+                   VALUES ('$new_person_id', '{$data['name']}', '$gender', '$date_of_birth', '{$data['phone']}', '$password')";
     
     if(executeTrackedQuery($conn, $person_sql)){
         // Insert into doctor table
@@ -222,7 +225,7 @@ function updateDoctor($conn, $data){
     if(isset($data['name'])) $person_updates[] = "name = '{$data['name']}'";
     if(isset($data['phone'])) $person_updates[] = "phone = '{$data['phone']}'";
     if(isset($data['gender'])) $person_updates[] = "gender = '{$data['gender']}'";
-    if(isset($data['age'])) $person_updates[] = "age = '{$data['age']}'";
+    if(isset($data['date_of_birth'])) $person_updates[] = "date_of_birth = '{$data['date_of_birth']}'";
     
     if(!empty($person_updates)){
         $update_person = "UPDATE person SET " . implode(', ', $person_updates) . " WHERE person_id = '$person_id'";
